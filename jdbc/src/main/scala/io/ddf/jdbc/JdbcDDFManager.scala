@@ -20,6 +20,9 @@ class JdbcDDFManager extends DDFManager {
   val dataSource = initializeConnectionPool(getEngine)
   val memDataSource = initializeMemConnectionPool(getEngine)
 
+  def defaultDataSourceName = "remote"
+  def memDataSourceName = "mem"
+
   ConnectionPool.add("remote", new DataSourceConnectionPool(dataSource))
   ConnectionPool.add("memory", new DataSourceConnectionPool(memDataSource))
 

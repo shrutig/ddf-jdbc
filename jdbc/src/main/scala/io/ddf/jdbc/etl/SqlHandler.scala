@@ -6,7 +6,6 @@ import io.ddf.DDF
 import io.ddf.content.{Schema, SqlResult}
 import io.ddf.datasource.DataFormat
 import io.ddf.jdbc.JdbcDDFManager
-import io.ddf.jdbc.content.LoadCommand.Parsers
 import io.ddf.jdbc.content._
 import org.apache.commons.lang.StringUtils
 
@@ -16,7 +15,7 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
   val ddfManager: JdbcDDFManager = ddf.getManager.asInstanceOf[JdbcDDFManager]
 
   //Override where required
-  protected def defaultDataSourceName = "remote"
+  protected def defaultDataSourceName = ddfManager.defaultDataSourceName
 
   //Override where required
   protected def catalog: Catalog = SimpleCatalog
@@ -45,19 +44,21 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
     val dbName = if (dataSource == null) defaultDataSourceName else dataSource
     if (StringUtils.startsWithIgnoreCase(command.trim, "LOAD")) {
       val tableName = LoadCommand(ddfManager, dbName, command)
-      ddfManager.getDDFByName(tableName)
+      val newDDF = ddfManager.getDDFByName(tableName)
+      newDDF
     } else if (StringUtils.startsWithIgnoreCase(command.trim, "CREATE")) {
       val tableName = Parsers.parseCreate(command).tableName
       DdlCommand(dbName, command)
       val tableSchema = if (schema == null) catalog.getTableSchema("remote", tableName) else schema
-      val emptyRep = EmptyRepresentation(tableName, tableSchema)
-      ddf.getManager.newDDF(this.getManager, emptyRep, Array(classOf[ViewRepresentation]), ddf.getNamespace, tableName, tableSchema)
+      val emptyRep = TableNameRepresentation(tableName, tableSchema)
+      ddf.getManager.newDDF(this.getManager, emptyRep, Array(Representations.VIEW), ddf.getNamespace, tableName, tableSchema)
     } else {
       val viewName = ddf.getSchemaHandler.newTableName()
-      DdlCommand(dbName, "CREATE VIEW " + viewName + " AS " + command)
+      //View will allow select commands
+      DdlCommand(dbName, "CREATE VIEW " + viewName + " AS (" + command+")")
       val viewSchema = if (schema == null) catalog.getViewSchema("remote", viewName) else schema
-      val viewRep = ViewRepresentation(viewName, viewSchema)
-      ddf.getManager.newDDF(this.getManager, viewRep, Array(classOf[ViewRepresentation]), ddf.getNamespace, viewName, viewSchema)
+      val viewRep = TableNameRepresentation(viewName, viewSchema)
+      ddf.getManager.newDDF(this.getManager, viewRep, Array(Representations.VIEW), ddf.getNamespace, viewName, viewSchema)
     }
   }
 
@@ -80,7 +81,7 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
       new SqlResult(null, Collections.singletonList("0"))
     } else {
       val tableName = ddf.getSchemaHandler.newTableName()
-      SqlCommand(dbName, tableName, command, maxRowsInt)
+      SqlCommand(dbName, tableName, command, maxRowsInt,"\t")
     }
   }
 

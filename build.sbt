@@ -36,7 +36,7 @@ lazy val jdbc = project.in(file("jdbc")).settings(commonSettings: _*).settings(
   name := "ddf-jdbc",
   pomExtra := submodulePom,
   libraryDependencies ++= Seq(
-    "io.ddf" %% "ddf_core" % "1.2-adatao",
+    "io.ddf" %% "ddf_core" % ddfVersion,
     "com.zaxxer" % "HikariCP-java6" % "2.3.9",
     "org.scalikejdbc" %% "scalikejdbc" % "2.2.7",
     "org.scalatest" %% "scalatest" % "3.0.0-M7",

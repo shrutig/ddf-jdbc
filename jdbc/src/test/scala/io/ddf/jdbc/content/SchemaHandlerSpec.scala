@@ -28,7 +28,7 @@ class SchemaHandlerSpec extends BaseSpec {
     columns.head.getName should be("YEAR")
   }
 
-  /*it should "test get factors on DDF with TablePartition" in {
+  it should "test get factors on DDF" in {
     val ddf = loadMtCarsDDF()
     val schemaHandler = ddf.getSchemaHandler
     Array(7, 8, 9, 10).foreach {
@@ -52,9 +52,8 @@ class SchemaHandlerSpec extends BaseSpec {
 
 
 
-  it should "test get factors for DDF with RDD[Array[Object]]" in {
+  it should "test get factors" in {
     val ddf = manager.sql2ddf("select * from mtcars")
-    //    ddf.getRepresentationHandler.remove(classOf[RDD[_]], classOf[TablePartition])
 
     val schemaHandler = ddf.getSchemaHandler
 
@@ -141,5 +140,4 @@ class SchemaHandlerSpec extends BaseSpec {
     assert(cols2(5).getOptionalFactor.getLevelCounts.get("0") === 9.0)
     assert(cols2(4).getOptionalFactor.getLevelCounts.get("3") === 1.0)
   }
-*/
 }
