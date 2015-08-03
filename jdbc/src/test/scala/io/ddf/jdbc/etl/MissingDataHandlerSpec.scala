@@ -1,11 +1,7 @@
 package io.ddf.jdbc.etl
 
-import com.google.common.collect.Lists
-import io.ddf.DDF
-import io.ddf.etl.IHandleMissingData.{NAChecking, Axis}
+import io.ddf.etl.IHandleMissingData.{Axis, NAChecking}
 import io.ddf.jdbc.BaseSpec
-import io.ddf.types.AggregateTypes.AggregateFunction
-import scala.collection.JavaConversions._
 
 class MissingDataHandlerSpec extends BaseSpec{
   val missingData = loadAirlineNADDF()

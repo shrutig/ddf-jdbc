@@ -1,7 +1,6 @@
 package io.ddf.jdbc.analytics
 
 import com.google.common.collect.Lists
-import io.ddf.exception.DDFException
 import io.ddf.jdbc.BaseSpec
 import io.ddf.types.AggregateTypes.AggregateFunction
 
@@ -32,5 +31,10 @@ class AggregationHandlerSpec extends BaseSpec {
     ddf.groupBy(Lists.newArrayList("origin")).agg(Lists.newArrayList("metrics = count(1)")).getNumRows() should be (3)
     ddf.groupBy(Lists.newArrayList("origin")).agg(Lists.newArrayList("metrics = count(dayofweek)")).getNumRows() should be (3)
     ddf.groupBy(Lists.newArrayList("origin")).agg(Lists.newArrayList("metrics = avg(arrdelay)")).getNumRows() should be (3)
+  }
+
+  it should "calculate correlation" in {
+    //0.8977184691827954
+    ddf.correlation("depdelay", "arrdelay") should be (0.89 +- 1)
   }
 }

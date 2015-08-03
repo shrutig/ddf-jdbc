@@ -1,16 +1,19 @@
 package io.ddf.jdbc.analytics
 
-import java.util
+import java.{lang, util}
 
 import io.ddf.DDF
 import io.ddf.analytics._
 import io.ddf.content.Schema
+import io.ddf.content.Schema.Column
 import io.ddf.exception.DDFException
 import io.ddf.jdbc.JdbcDDFManager
-import io.ddf.jdbc.content.SqlArrayResultCommand
+import io.ddf.jdbc.analytics.StatsUtils.{CovarianceCounter, Quantiles}
+import io.ddf.jdbc.content.{Representations, SqlArrayResult, SqlArrayResultCommand}
 import org.apache.commons.lang.StringUtils
 
 import scala.collection.JavaConversions._
+import scala.util.Try
 
 class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
 
@@ -18,6 +21,19 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
 
   //count all,sum,mean,variance,notNullCount,min,max
   protected def SUMMARY_FUNCTIONS = "COUNT(*), SUM(%s), AVG(%s), VAR_SAMP(%s),COUNT(%s), MIN(%s), MAX(%s)"
+
+  //TODO update this by computing Summary on single column
+  private def getSummaryVector(columnName: String): Option[Summary] = {
+    val schema = ddf.getSchema
+    val column: Column = schema.getColumn(columnName)
+    column.isNumeric match {
+      case false => Option.empty[Summary]
+      case true =>
+        val colIndex = ddf.getSchema.getColumnIndex(columnName)
+        val summaries = getSummary
+        Option(summaries(colIndex))
+    }
+  }
 
 
   override def getSummaryImpl: Array[Summary] = {
@@ -109,5 +125,33 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
     simpleSummaries.toArray(new Array[SimpleSummary](simpleSummaries.size))
   }
 
+  override def getVectorCor(xColumnName: String, yColumnName: String): Double = {
+    ddf.getAggregationHandler.computeCorrelation(xColumnName, yColumnName)
+  }
+
+
+  override def getVectorCovariance(xColumnName: String, yColumnName: String): Double = {
+    val dataSet = ddf.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult].result
+    val xIndex = ddf.getSchema.getColumnIndex(xColumnName)
+    val yIndex = ddf.getSchema.getColumnIndex(yColumnName)
+    val accumulator = new CovarianceCounter
+    dataSet.foreach { in =>
+      accumulator.add(asDouble(in(xIndex)), asDouble(in(yIndex)))
+    }
+    accumulator.cov
+  }
+
+  override def getVectorQuantiles(columnName: String, percentiles: Array[lang.Double]): Array[lang.Double] = {
+    val rowDataSet = ddf.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult].result
+    val xIndex = ddf.getSchema.getColumnIndex(columnName)
+    val doubleDataSet: List[Double] = rowDataSet.map { in => asDouble(in(xIndex)) }
+    Quantiles.getQuantiles(doubleDataSet, percentiles)
+  }
+
+
+  def asDouble(elem: Any) = {
+    val mayBeDouble = Try(elem.toString.trim.toDouble)
+    mayBeDouble.getOrElse(0.0)
+  }
 
 }
