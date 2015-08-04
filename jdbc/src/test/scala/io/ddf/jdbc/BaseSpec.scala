@@ -6,7 +6,10 @@ import org.scalatest.{FlatSpec, Matchers}
 object ManagerFactory{
   val jdbcDDFManager = DDFManager.get("jdbc").asInstanceOf[JdbcDDFManager]
 }
-class BaseSpec extends FlatSpec with Matchers {
+
+class BaseSpec extends FlatSpec with Matchers with Loader
+
+trait Loader{
   val jdbcDDFManager = ManagerFactory.jdbcDDFManager
   var lDdf: DDF = null
 

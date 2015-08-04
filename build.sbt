@@ -50,6 +50,10 @@ lazy val jdbcExamples = project.in(file("jdbc-examples")).dependsOn(jdbc).settin
   name := "jdbc-examples",
   pomExtra := submodulePom
 )
+lazy val jdbcTest= project.in(file("jdbc-test")).dependsOn(jdbc).settings(commonSettings: _*).settings(
+  name := "jdbc-test",
+  pomExtra := submodulePom
+)
 
 resolvers ++= Seq("Adatao Mvnrepos Snapshots" at "https://raw.github.com/adatao/mvnrepos/master/snapshots",
   "Adatao Mvnrepos Releases" at "https://raw.github.com/adatao/mvnrepos/master/releases")

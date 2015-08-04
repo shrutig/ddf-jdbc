@@ -32,9 +32,4 @@ class AggregationHandlerSpec extends BaseSpec {
     ddf.groupBy(Lists.newArrayList("origin")).agg(Lists.newArrayList("metrics = count(dayofweek)")).getNumRows() should be (3)
     ddf.groupBy(Lists.newArrayList("origin")).agg(Lists.newArrayList("metrics = avg(arrdelay)")).getNumRows() should be (3)
   }
-
-  it should "calculate correlation" in {
-    //0.8977184691827954
-    ddf.correlation("depdelay", "arrdelay") should be (0.89 +- 1)
-  }
 }

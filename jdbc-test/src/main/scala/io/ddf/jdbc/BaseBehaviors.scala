@@ -1,19 +1,17 @@
 package io.ddf.jdbc
 
 import io.ddf.{DDF, DDFManager}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.Matchers
 
-class BaseSpec extends FlatSpec with Matchers {
+trait BaseBehaviors extends Matchers with Loader
+
+object ManagerFactory{
   val jdbcDDFManager = DDFManager.get("jdbc").asInstanceOf[JdbcDDFManager]
+}
+
+trait Loader{
+  val jdbcDDFManager = ManagerFactory.jdbcDDFManager
   var lDdf: DDF = null
-
-  def ddf = loadDDF()
-
-  def loadDDF(): DDF = {
-    if (lDdf == null)
-      lDdf = jdbcDDFManager.loadTable(getClass.getResource("/airline.csv").getPath, ",")
-    lDdf
-  }
 
   def loadIrisTrain(): DDF = {
     try {
@@ -39,7 +37,7 @@ class BaseSpec extends FlatSpec with Matchers {
       ddf = jdbcDDFManager.getDDFByName("airline")
     } catch {
       case e: Exception =>
-        jdbcDDFManager.sql("create table airline (Year int,Month int,DayofMonth int," + "DayOfWeek int,DepTime int,CRSDepTime int,ArrTime int," + "CRSArrTime int,UniqueCarrier string, FlightNum int, " + "TailNum string, ActualElapsedTime int, CRSElapsedTime int, " + "AirTime int, ArrDelay int, DepDelay int, Origin string, " + "Dest string, Distance int, TaxiIn int, TaxiOut int, Cancelled int, " + "CancellationCode string, Diverted string, CarrierDelay int, " + "WeatherDelay int, NASDelay int, SecurityDelay int, LateAircraftDelay int )")
+        jdbcDDFManager.sql("create table airline (Year int,Month int,DayofMonth int," + "DayOfWeek int,DepTime int,CRSDepTime int,ArrTime int," + "CRSArrTime int,UniqueCarrier varchar, FlightNum int, " + "TailNum varchar, ActualElapsedTime int, CRSElapsedTime int, " + "AirTime int, ArrDelay int, DepDelay int, Origin varchar, " + "Dest varchar, Distance int, TaxiIn int, TaxiOut int, Cancelled int, " + "CancellationCode varchar, Diverted varchar, CarrierDelay int, " + "WeatherDelay int, NASDelay int, SecurityDelay int, LateAircraftDelay int )")
         val filePath = getClass.getResource("/airline.csv").getPath
         jdbcDDFManager.sql("load '" + filePath + "' into airline")
         ddf = jdbcDDFManager.getDDFByName("airline")
@@ -53,7 +51,7 @@ class BaseSpec extends FlatSpec with Matchers {
       ddf = jdbcDDFManager.getDDFByName("airlineWithNA")
     } catch {
       case e: Exception =>
-        jdbcDDFManager.sql("create table airlineWithNA (Year int,Month int,DayofMonth int," + "DayOfWeek int,DepTime int,CRSDepTime int,ArrTime int," + "CRSArrTime int,UniqueCarrier string, FlightNum int, " + "TailNum string, ActualElapsedTime int, CRSElapsedTime int, " + "AirTime int, ArrDelay int, DepDelay int, Origin string, " + "Dest string, Distance int, TaxiIn int, TaxiOut int, Cancelled int, " + "CancellationCode string, Diverted string, CarrierDelay int, " + "WeatherDelay int, NASDelay int, SecurityDelay int, LateAircraftDelay int )")
+        jdbcDDFManager.sql("create table airlineWithNA (Year int,Month int,DayofMonth int," + "DayOfWeek int,DepTime int,CRSDepTime int,ArrTime int," + "CRSArrTime int,UniqueCarrier varchar, FlightNum int, " + "TailNum varchar, ActualElapsedTime int, CRSElapsedTime int, " + "AirTime int, ArrDelay int, DepDelay int, Origin varchar, " + "Dest varchar, Distance int, TaxiIn int, TaxiOut int, Cancelled int, " + "CancellationCode varchar, Diverted varchar, CarrierDelay int, " + "WeatherDelay int, NASDelay int, SecurityDelay int, LateAircraftDelay int )")
         val filePath = getClass.getResource("/airlineWithNA.csv").getPath
         jdbcDDFManager.sql("load '" + filePath + "' WITH NULL '' NO DEFAULTS into airlineWithNA")
         ddf = jdbcDDFManager.getDDFByName("airlineWithNA")
@@ -68,7 +66,7 @@ class BaseSpec extends FlatSpec with Matchers {
       ddf = jdbcDDFManager.getDDFByName("year_names")
     } catch {
       case e: Exception =>
-        jdbcDDFManager.sql("create table year_names (Year_num int,Name string)")
+        jdbcDDFManager.sql("create table year_names (Year_num int,Name varchar)")
         val filePath = getClass.getResource("/year_names.csv").getPath
         jdbcDDFManager.sql("load '" + filePath + "' into year_names")
         ddf = jdbcDDFManager.getDDFByName("year_names")
@@ -93,3 +91,4 @@ class BaseSpec extends FlatSpec with Matchers {
   }
 
 }
+
