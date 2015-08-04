@@ -5,7 +5,7 @@ import java.util
 
 import io.ddf.content.Schema
 import io.ddf.content.Schema.Column
-import scalikejdbc.NamedDB
+import scalikejdbc._
 
 trait Catalog {
   def getViewSchema(db: String, name: String): Schema
@@ -19,8 +19,10 @@ object SimpleCatalog extends Catalog {
   }
 
   def getTableSchema(db: String, name: String): Schema = {
-    val columns = listColumnsForTable(NamedDB(db).conn, name)
-    new Schema(name, columns)
+    using(ConnectionPool(db).borrow()) { conn: Connection =>
+      val columns = listColumnsForTable(conn, name)
+      new Schema(name, columns)
+    }
   }
 
   @throws(classOf[SQLException])

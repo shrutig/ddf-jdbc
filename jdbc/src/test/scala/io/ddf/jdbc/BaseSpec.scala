@@ -3,8 +3,11 @@ package io.ddf.jdbc
 import io.ddf.{DDF, DDFManager}
 import org.scalatest.{FlatSpec, Matchers}
 
-class BaseSpec extends FlatSpec with Matchers {
+object ManagerFactory{
   val jdbcDDFManager = DDFManager.get("jdbc").asInstanceOf[JdbcDDFManager]
+}
+class BaseSpec extends FlatSpec with Matchers {
+  val jdbcDDFManager = ManagerFactory.jdbcDDFManager
   var lDdf: DDF = null
 
   def loadIrisTrain(): DDF = {

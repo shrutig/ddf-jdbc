@@ -9,6 +9,7 @@ import io.ddf.DDFManager
 import io.ddf.content.Schema.{Column, ColumnType}
 import io.ddf.content.{Schema, SqlResult}
 import org.apache.commons.io.IOUtils
+import org.slf4j.LoggerFactory
 import scalikejdbc._
 
 import scala.collection.JavaConversions._
@@ -18,9 +19,12 @@ import scala.util.{Failure, Success, Try}
 
 object SqlCommand {
 
+  private final val logger = LoggerFactory.getLogger(getClass)
+
   def apply(db: String, name: String, command: String, maxRows: Int, separator:String) = {
     val schema = new Schema(name, "")
     val list = NamedDB(db) readOnly { implicit session =>
+      logger.warn("**********SQL Statement**********"+command)
       SQL(command).map { rs =>
         val actualRS = rs.underlying
         val md = actualRS.getMetaData
@@ -85,7 +89,7 @@ object SqlArrayResultCommand {
 
 object DdlCommand {
   def apply(db: String, command: String) = {
-    NamedDB(db) localTx { implicit session =>
+    NamedDB(db) autoCommit { implicit session =>
       SQL(command).execute().apply()
     }
   }
