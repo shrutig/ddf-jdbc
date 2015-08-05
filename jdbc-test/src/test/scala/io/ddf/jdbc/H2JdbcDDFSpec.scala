@@ -6,6 +6,7 @@ import io.ddf.jdbc.etl.ETLBehaviors
 import org.scalatest.FlatSpec
 
 class H2JdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors {
+  it should behave like ddfWithAddressing
   it should behave like ddfWithAggregationHandler
   it should behave like ddfWithStatisticsHandler
   it should behave like ddfWithBinningHandler

@@ -1,4 +1,5 @@
 import Common._
+import sbt.Keys._
 
 organization := "io.ddf"
 
@@ -25,7 +26,7 @@ conflictManager := ConflictManager.strict
 
 commonSettings
 
-lazy val root = project.in(file(".")).aggregate(jdbc, jdbcExamples)
+lazy val root = project.in(file(".")).aggregate(jdbc, jdbcExamples,jdbcTest)
 
 val com_adatao_unmanaged = Seq(
   "com.adatao.unmanaged.net.rforge" % "REngine" % "2.1.1.compiled",
@@ -39,10 +40,8 @@ lazy val jdbc = project.in(file("jdbc")).settings(commonSettings: _*).settings(
     "io.ddf" %% "ddf_core" % ddfVersion,
     "com.zaxxer" % "HikariCP-java6" % "2.3.9",
     "org.scalikejdbc" %% "scalikejdbc" % "2.2.7",
-    "org.scalatest" %% "scalatest" % "3.0.0-M7",
     "com.univocity" % "univocity-parsers" % "1.5.5",
-    "com.clearspring.analytics" % "stream" % "2.4.0" exclude("asm", "asm"),
-    "com.h2database" % "h2" % "1.4.187"
+    "com.clearspring.analytics" % "stream" % "2.4.0" exclude("asm", "asm")
   )
 )
 
@@ -50,9 +49,14 @@ lazy val jdbcExamples = project.in(file("jdbc-examples")).dependsOn(jdbc).settin
   name := "jdbc-examples",
   pomExtra := submodulePom
 )
-lazy val jdbcTest= project.in(file("jdbc-test")).dependsOn(jdbc).settings(commonSettings: _*).settings(
+
+lazy val jdbcTest = project.in(file("jdbc-test")).dependsOn(jdbc).settings(commonSettings: _*).settings(
   name := "jdbc-test",
-  pomExtra := submodulePom
+  pomExtra := submodulePom,
+  libraryDependencies ++= Seq(
+    "org.scalatest" %% "scalatest" % "3.0.0-M7",
+    "com.h2database" % "h2" % "1.4.187" % "test"
+  )
 )
 
 resolvers ++= Seq("Adatao Mvnrepos Snapshots" at "https://raw.github.com/adatao/mvnrepos/master/snapshots",
