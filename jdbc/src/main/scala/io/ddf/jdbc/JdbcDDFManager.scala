@@ -3,16 +3,14 @@ package io.ddf.jdbc
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import io.ddf.content.Schema
+import io.ddf.jdbc.content.{Load, LoadCommand, SchemaToCreate}
 import io.ddf.jdbc.utils.Utils
 import io.ddf.misc.Config
 import io.ddf.{DDF, DDFManager}
-import org.slf4j.LoggerFactory
 import scalikejdbc.{ConnectionPool, DataSourceConnectionPool}
 
 
 class JdbcDDFManager extends DDFManager {
-
-  private final val logger = LoggerFactory.getLogger(getClass)
 
   override def getEngine: String = "jdbc"
 
@@ -20,17 +18,22 @@ class JdbcDDFManager extends DDFManager {
 
   def defaultDataSourceName = "remote"
 
-  ConnectionPool.add("remote",new DataSourceConnectionPool(dataSource))
+  ConnectionPool.add("remote", new DataSourceConnectionPool(dataSource))
 
 
   def initializeConnectionPool(engine: String) = {
     val jdbcUrl = Config.getValue(engine, "jdbcUrl")
     val jdbcUser = Config.getValue(engine, "jdbcUser")
     val jdbcPassword = Config.getValue(engine, "jdbcPassword")
-    val poolSizeStr= Config.getValue(engine, "jdbcPoolSize")
-    val poolSize = if(poolSizeStr==null) 10 else poolSizeStr.toInt
+    val poolSizeStr = Config.getValue(engine, "jdbcPoolSize")
+    val driverClassName = Config.getValue(engine, "jdbcDriverClass")
+    val connectionTestQuery = Config.getValue(engine, "jdbcConnectionTestQuery")
+
+    val poolSize = if (poolSizeStr == null) 10 else poolSizeStr.toInt
 
     val config = new HikariConfig()
+    if (driverClassName != null) config.setDriverClassName(driverClassName)
+    if (connectionTestQuery != null) config.setConnectionTestQuery(connectionTestQuery)
     config.setJdbcUrl(jdbcUrl)
     config.setUsername(jdbcUser)
     config.setPassword(jdbcPassword)
@@ -40,10 +43,19 @@ class JdbcDDFManager extends DDFManager {
 
 
   override def loadTable(fileURL: String, fieldSeparator: String): DDF = {
-    null
+    val tableName = getDummyDDF.getSchemaHandler.newTableName()
+    val load = new Load(tableName, fieldSeparator.charAt(0), fileURL, null, null, true)
+    val lines = LoadCommand.getLines(load, 5)
+    import scala.collection.JavaConverters._
+    val colInfo = getColumnInfo(lines.asScala.toList, false, true)
+    val schema = new Schema(tableName, colInfo)
+    val createCommand = SchemaToCreate(defaultDataSourceName, schema)
+    val ddf = sql2ddf(createCommand)
+    LoadCommand(this, defaultDataSourceName, load)
+    ddf
   }
 
-  def getColumnInfo(sampleData: Seq[Array[String]],
+  def getColumnInfo(sampleData: List[Array[String]],
                     hasHeader: Boolean = false,
                     doPreferDouble: Boolean = true): Array[Schema.Column] = {
 

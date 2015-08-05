@@ -7,7 +7,7 @@ import io.ddf.analytics.Summary
 import io.ddf.etl.IHandleMissingData.{Axis, NAChecking}
 import io.ddf.etl.{TransformationHandler => DDFT}
 import io.ddf.etl.Types.JoinType
-import io.ddf.jdbc.BaseBehaviors
+import io.ddf.jdbc.{Loader, BaseBehaviors}
 import io.ddf.jdbc.content.{Representations, SqlArrayResult}
 import io.ddf.types.AggregateTypes.AggregateFunction
 import org.scalatest.FlatSpec
@@ -18,9 +18,9 @@ import scala.collection.JavaConversions._
 trait ETLBehaviors extends BaseBehaviors {
   this: FlatSpec =>
 
-  def ddfWithBasicJoinSupport: Unit = {
-    val airlineDDF = loadAirlineDDF()
-    val yearNamesDDF = loadYearNamesDDF()
+  def ddfWithBasicJoinSupport(implicit l:Loader): Unit = {
+    val airlineDDF = l.loadAirlineDDF()
+    val yearNamesDDF = l.loadYearNamesDDF()
 
     it should "inner join tables" in {
       val ddf: DDF = airlineDDF
@@ -58,10 +58,10 @@ trait ETLBehaviors extends BaseBehaviors {
     }
   }
 
-  def ddfWithSemiJoinSupport: Unit = {
+  def ddfWithSemiJoinSupport(implicit l:Loader): Unit = {
 
-    val airlineDDF = loadAirlineDDF()
-    val yearNamesDDF = loadYearNamesDDF()
+    val airlineDDF = l.loadAirlineDDF()
+    val yearNamesDDF = l.loadYearNamesDDF()
 
     it should "left semi join tables" in {
       val ddf: DDF = airlineDDF
@@ -83,10 +83,10 @@ trait ETLBehaviors extends BaseBehaviors {
     }
   }
 
-  def ddfWithFullOuterJoinSupport: Unit = {
+  def ddfWithFullOuterJoinSupport(implicit l:Loader): Unit = {
 
-    val airlineDDF = loadAirlineDDF()
-    val yearNamesDDF = loadYearNamesDDF()
+    val airlineDDF = l.loadAirlineDDF()
+    val yearNamesDDF = l.loadYearNamesDDF()
 
     it should "full outer join tables" in {
       val ddf: DDF = airlineDDF
@@ -106,10 +106,10 @@ trait ETLBehaviors extends BaseBehaviors {
     }
   }
 
-  def ddfWithRightOuterJoinSupport: Unit = {
+  def ddfWithRightOuterJoinSupport(implicit l:Loader): Unit = {
 
-    val airlineDDF = loadAirlineDDF()
-    val yearNamesDDF = loadYearNamesDDF()
+    val airlineDDF = l.loadAirlineDDF()
+    val yearNamesDDF = l.loadYearNamesDDF()
 
     it should "right outer join tables" in {
       val ddf: DDF = airlineDDF
@@ -129,8 +129,8 @@ trait ETLBehaviors extends BaseBehaviors {
     }
   }
 
-  def ddfWithMissingDataDropSupport: Unit = {
-    val missingData = loadAirlineNADDF()
+  def ddfWithMissingDataDropSupport(implicit l:Loader): Unit = {
+    val missingData = l.loadAirlineNADDF()
 
     it should "drop all rows with NA values" in {
       val result = missingData.dropNA()
@@ -154,7 +154,7 @@ trait ETLBehaviors extends BaseBehaviors {
     }
 
     it should "drop all columns with NA values with load table" in {
-      val missingData = loadAirlineNADDF()
+      val missingData = l.loadAirlineNADDF()
       val result = missingData.dropNA(Axis.COLUMN)
       result.getNumColumns should be(22)
     }
@@ -170,12 +170,12 @@ trait ETLBehaviors extends BaseBehaviors {
     }
   }
 
-  def ddfWithMissingDataFillSupport: Unit = {
-    val missingData = loadAirlineNADDF()
+  def ddfWithMissingDataFillSupport(implicit l:Loader): Unit = {
+    val missingData = l.loadAirlineNADDF()
 
 
     it should "fill by value" in {
-      val ddf = loadAirlineDDF()
+      val ddf = l.loadAirlineDDF()
       val ddf1: DDF = ddf.VIEWS.project(Lists.newArrayList("YEAR", "LateAircraftDelay"))
       val filledDDF: DDF = ddf1.fillNA("0")
       val annualDelay = filledDDF.aggregate("YEAR, sum(LateAircraftDelay)").get("2008")(0)
@@ -183,7 +183,7 @@ trait ETLBehaviors extends BaseBehaviors {
     }
 
     it should "fill by dictionary" in {
-      val ddf = loadAirlineDDF()
+      val ddf = l.loadAirlineDDF()
       val ddf1: DDF = ddf.VIEWS.project(Lists.newArrayList("YEAR", "securitydelay", "LateAircraftDelay"))
       val dict: Map[String, String] = Map("YEAR" -> "2000", "securitydelay" -> "0", "LateAircraftDelay" -> "1")
       val filledDDF = ddf1.getMissingDataHandler.fillNA(null, null, 0, null, dict, null)
@@ -192,15 +192,15 @@ trait ETLBehaviors extends BaseBehaviors {
     }
 
     it should "fill by aggregate function" in {
-      val ddf = loadAirlineDDF()
+      val ddf = l.loadAirlineDDF()
       val ddf1: DDF = ddf.VIEWS.project(Lists.newArrayList("YEAR", "securitydelay", "LateAircraftDelay"))
       val result = ddf1.getMissingDataHandler.fillNA(null, null, 0, AggregateFunction.MEAN, null, null)
       result should not be (null)
     }
   }
 
-  def ddfWithBasicTransformSupport: Unit ={
-    val ddf = loadAirlineDDF().sql2ddf("select year, month, deptime, arrtime, distance, arrdelay, depdelay from airline")
+  def ddfWithBasicTransformSupport(implicit l:Loader): Unit ={
+    val ddf = l.loadAirlineDDF().sql2ddf("select year, month, deptime, arrtime, distance, arrdelay, depdelay from airline")
 
     it should "transform scale min max" in {
       ddf.getSummary foreach println _
@@ -256,13 +256,12 @@ trait ETLBehaviors extends BaseBehaviors {
     }
   }
 
-  def ddfWithSqlHandler: Unit ={
-    val airlineDDF = loadAirlineDDF()
-    val yearNamesDDF = loadYearNamesDDF()
+  def ddfWithSqlHandler(implicit l:Loader): Unit ={
+    val airlineDDF = l.loadAirlineDDF()
 
     it should "create table and load data from file" in {
       val ddf = airlineDDF
-      ddf.getColumnNames should have size (29)
+      ddf.getColumnNames should have size 29
 
       //MetaDataHandler
       ddf.getNumRows should be(31)

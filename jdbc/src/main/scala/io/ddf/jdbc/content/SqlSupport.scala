@@ -2,13 +2,16 @@ package io.ddf.jdbc.content
 
 import java.io.FileReader
 import java.text.SimpleDateFormat
+import java.util
 import java.util.Date
 
+import com.google.common.collect.Lists
 import com.univocity.parsers.csv.{CsvParser, CsvParserSettings}
 import io.ddf.DDFManager
 import io.ddf.content.Schema.{Column, ColumnType}
 import io.ddf.content.{Schema, SqlResult}
 import org.apache.commons.io.IOUtils
+import org.apache.commons.lang.StringUtils
 import org.slf4j.LoggerFactory
 import scalikejdbc._
 
@@ -21,10 +24,9 @@ object SqlCommand {
 
   private final val logger = LoggerFactory.getLogger(getClass)
 
-  def apply(db: String, name: String, command: String, maxRows: Int, separator:String) = {
+  def apply(db: String, name: String, command: String, maxRows: Int, separator: String) = {
     val schema = new Schema(name, "")
     val list = NamedDB(db) readOnly { implicit session =>
-      logger.warn("**********SQL Statement**********"+command)
       SQL(command).map { rs =>
         val actualRS = rs.underlying
         val md = actualRS.getMetaData
@@ -36,7 +38,7 @@ object SqlCommand {
           //resultset in jdbc start at 1
           val rsIdx = colIdx + 1
           val obj = actualRS.getObject(rsIdx)
-          row(colIdx) = if(obj==null) null else obj.toString
+          row(colIdx) = if (obj == null) null else obj.toString
           val colName = md.getColumnName(rsIdx)
           val colType = md.getColumnTypeName(rsIdx)
           columns(colIdx) = new Column(colName, colType)
@@ -95,21 +97,61 @@ object DdlCommand {
   }
 }
 
+object SchemaToCreate {
+  def apply(db: String, schema: Schema) = {
+    val command = "CREATE TABLE " + schema.getTableName + " (" + schema.getColumns.map { col =>
+      val colType = col.getType
+      val sqlType = col.getType match {
+        case ColumnType.STRING => "VARCHAR"
+        case _ => col.getType
+      }
+      col.getName + " " + sqlType
+    }.mkString(",") + ");"
+    command
+  }
+}
+
 object LoadCommand {
   private val dateFormat = new SimpleDateFormat()
 
   class SerCsvParserSettings extends CsvParserSettings with Serializable
 
-  def apply(ddfManager: DDFManager, db: String, command: String) = {
+  def apply(ddfManager: DDFManager, db: String, command: String): String = {
     val l = Parsers.parseLoad(command)
-    val parser: CsvParser = getParser(l)
-    val reader = new FileReader(l.url)
-    val lines = parser.parseAll(reader)
-    IOUtils.closeQuietly(reader)
+    apply(ddfManager, db, l)
+  }
+
+  def apply(ddfManager: DDFManager, db: String, l: Load): String = {
+    val lines: util.List[Array[String]] = getLines(l)
     val ddf = ddfManager.getDDFByName(l.tableName)
     val schema = ddf.getSchema
     insert(db, schema, lines, l.useDefaults)
     l.tableName
+  }
+
+  def getLines(l: Load): util.List[Array[String]] = {
+    val parser: CsvParser = getParser(l)
+    val reader = new FileReader(l.url)
+    val lines = parser.parseAll(reader)
+    IOUtils.closeQuietly(reader)
+    lines
+  }
+
+  def getLines(l: Load, maxRows: Int): util.List[Array[String]] = {
+    val parser: CsvParser = getParser(l)
+    val reader = new FileReader(l.url)
+    var parsedRows = 0
+    val rows = Lists.newArrayList[Array[String]]()
+    parser.beginParsing(reader)
+    while (parsedRows < maxRows) {
+      val row = parser.parseNext()
+      if (row != null) {
+        rows.add(row)
+        parsedRows = parsedRows + 1
+      }
+      else parsedRows = maxRows
+    }
+    rows
   }
 
   def getParser(l: Load): CsvParser = {
@@ -157,14 +199,27 @@ object LoadCommand {
             row(idx) = colValue
           case ColumnType.INT =>
             row(idx) = Try(colValue.toInt).getOrElse(if (useDefaults) 0 else null)
+          case ColumnType.SMALLINT =>
+            row(idx) = Try(colValue.toInt).getOrElse(if (useDefaults) 0 else null)
+          case ColumnType.TINYINT =>
+            row(idx) = Try(colValue.toInt).getOrElse(if (useDefaults) 0 else null)
+
           case ColumnType.FLOAT =>
             row(idx) = Try(colValue.toFloat).getOrElse(if (useDefaults) 0 else null)
           case ColumnType.DOUBLE =>
             row(idx) = Try(colValue.toDouble).getOrElse(if (useDefaults) 0 else null)
-          case ColumnType.BIGINT =>
+          case ColumnType.DECIMAL =>
             row(idx) = Try(colValue.toDouble).getOrElse(if (useDefaults) 0 else null)
+
+          case ColumnType.BIGINT =>
+            row(idx) = Try(colValue.toLong).getOrElse(if (useDefaults) 0 else null)
+          case ColumnType.LONG =>
+            row(idx) = Try(colValue.toLong).getOrElse(if (useDefaults) 0 else null)
           case ColumnType.TIMESTAMP =>
             row(idx) = Try(dateFormat.parse(colValue)).getOrElse(new Date(0))
+          case ColumnType.DATE =>
+            row(idx) = Try(dateFormat.parse(colValue)).getOrElse(new Date(0))
+
           case ColumnType.BOOLEAN =>
             row(idx) = Try(colValue.toBoolean).getOrElse(if (useDefaults) false else null)
         }
@@ -183,7 +238,7 @@ sealed trait Function
 
 object Parsers extends RegexParsers with JavaTokenParsers {
 
-  def parseLoad(input: String): Load = parseAll(load, input) match {
+  def parseLoad(input: String): Load = parseAll(load, StringUtils.removeEnd(input, ";")) match {
     case s: Success[Load] => s.get
     case e: Error =>
       val msg = "Cannot parse [" + input + "] because " + e.msg
@@ -193,7 +248,7 @@ object Parsers extends RegexParsers with JavaTokenParsers {
       throw new IllegalArgumentException(msg)
   }
 
-  def parseCreate(input: String): Create = parseAll(create, input) match {
+  def parseCreate(input: String): Create = parseAll(create, StringUtils.removeEnd(input, ";")) match {
     case s: Success[Create] => s.get
     case e: Error =>
       val msg = "Cannot parse [" + input + "] because " + e.msg

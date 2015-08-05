@@ -5,33 +5,57 @@ import java.util
 
 import io.ddf.content.APersistenceHandler.PersistenceUri
 import io.ddf.content.Schema.Column
+import io.ddf.jdbc.{BaseBehaviors, Loader}
 import io.ddf.{DDF, DDFManager}
-import io.ddf.jdbc.BaseBehaviors
 import org.scalatest.FlatSpec
-import scala.collection.JavaConverters._
+
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 
-trait ContentBehaviors extends BaseBehaviors{ this:FlatSpec=>
+trait ContentBehaviors extends BaseBehaviors {
+  this: FlatSpec =>
 
-  def ddfWithMetaDataHandler: Unit ={
+  def ddfWithAddressing(implicit l: Loader): Unit = {
+    val ddf = l.loadAirlineDDF()
+    it should "load data from file" in {
+      ddf.getNamespace should be("adatao")
+      ddf.getColumnNames should have size 29
+
+    }
+
+    it should "load data from file using loadTable" in {
+      val filePath = getClass.getResource("/airline.csv").getPath
+      val ddf = l.jdbcDDFManager.loadTable(filePath, ",")
+      ddf.getNamespace should be("adatao")
+      ddf.getColumnNames should have size 29
+
+    }
+
+    it should "be addressable via URI" in {
+      ddf.getUri should be("ddf://" + ddf.getNamespace + "/" + ddf.getName)
+      l.jdbcDDFManager.getDDFByURI("ddf://" + ddf.getNamespace + "/" + ddf.getName) should be(ddf)
+    }
+  }
+
+  def ddfWithMetaDataHandler(implicit l: Loader): Unit = {
     it should "get number of rows" in {
-      val ddf = loadAirlineDDF()
+      val ddf = l.loadAirlineDDF()
       ddf.getNumRows should be(31)
     }
   }
 
-  def ddfWithPersistenceHandler: Unit ={
+  def ddfWithPersistenceHandler(implicit l: Loader): Unit = {
     it should "hold namespaces correctly" in {
-      val manager: DDFManager = DDFManager.get("jdbc")
+      val manager: DDFManager = DDFManager.get(l.engine)
       val ddf: DDF = manager.newDDF
 
       val namespaces = ddf.getPersistenceHandler.listNamespaces
 
-      namespaces should not be (null)
+      namespaces should not be null
       for (namespace <- namespaces.asScala) {
         val ddfs = ddf.getPersistenceHandler.listItems(namespace)
-        ddfs should not be (null)
+        ddfs should not be null
       }
 
     }
@@ -41,14 +65,14 @@ trait ContentBehaviors extends BaseBehaviors{ this:FlatSpec=>
       val ddf: DDF = manager.newDDF
       val uri: PersistenceUri = ddf.persist
       uri.getEngine should be("jdbc")
-      new File(uri.getPath).exists should be(true)
-      ddf.unpersist
+      new File(uri.getPath).exists() should be(true)
+      ddf.unpersist()
     }
   }
 
-  def ddfWithSchemaHandler: Unit ={
-    val manager = jdbcDDFManager
-    val ddf = loadAirlineDDF()
+  def ddfWithSchemaHandler(implicit l: Loader): Unit = {
+    val manager = l.jdbcDDFManager
+    val ddf = l.loadAirlineDDF()
     it should "get schema" in {
       ddf.getSchema should not be null
     }
@@ -60,7 +84,7 @@ trait ContentBehaviors extends BaseBehaviors{ this:FlatSpec=>
     }
 
     it should "get columns for sql2ddf create table" in {
-      val ddf = loadAirlineDDF()
+      val ddf = l.loadAirlineDDF()
       val columns = ddf.getSchema.getColumns
       columns should not be null
       columns.length should be(29)
@@ -68,7 +92,7 @@ trait ContentBehaviors extends BaseBehaviors{ this:FlatSpec=>
     }
 
     it should "test get factors on DDF" in {
-      val ddf = loadMtCarsDDF()
+      val ddf = l.loadMtCarsDDF()
       val schemaHandler = ddf.getSchemaHandler
       Array(7, 8, 9, 10).foreach {
         idx => schemaHandler.setAsFactor(idx)
@@ -116,7 +140,7 @@ trait ContentBehaviors extends BaseBehaviors{ this:FlatSpec=>
     }
 
     it should "test NA handling" in {
-      val ddf = loadAirlineNADDF()
+      val ddf = l.loadAirlineNADDF()
       val schemaHandler = ddf.getSchemaHandler
 
       Array(0, 8, 16, 17, 24, 25).foreach {
@@ -180,8 +204,8 @@ trait ContentBehaviors extends BaseBehaviors{ this:FlatSpec=>
     }
   }
 
-  def ddfWithViewHandler: Unit ={
-    val airlineDDF = loadAirlineDDF()
+  def ddfWithViewHandler(implicit l: Loader): Unit = {
+    val airlineDDF = l.loadAirlineDDF()
 
     it should "project after remove columns " in {
       val ddf = airlineDDF

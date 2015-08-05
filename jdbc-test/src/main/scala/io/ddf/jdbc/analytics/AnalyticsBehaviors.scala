@@ -4,15 +4,15 @@ import com.google.common.collect.Lists
 import io.ddf.DDF
 import io.ddf.analytics.AStatisticsSupporter
 import io.ddf.content.Schema.ColumnClass
-import io.ddf.jdbc.BaseBehaviors
+import io.ddf.jdbc.{BaseBehaviors, Loader}
 import io.ddf.types.AggregateTypes.AggregateFunction
 import org.scalatest.FlatSpec
 
 trait AnalyticsBehaviors extends BaseBehaviors {
   this: FlatSpec =>
 
-  def ddfWithAggregationHandler = {
-    val ddf = loadAirlineDDF().sql2ddf("select year, month, dayofweek, deptime, arrtime,origin, distance, arrdelay, depdelay, carrierdelay, weatherdelay, nasdelay, securitydelay, lateaircraftdelay from airline")
+  def ddfWithAggregationHandler(implicit l: Loader) = {
+    val ddf = l.loadAirlineDDF().sql2ddf("select year, month, dayofweek, deptime, arrtime,origin, distance, arrdelay, depdelay, carrierdelay, weatherdelay, nasdelay, securitydelay, lateaircraftdelay from airline")
 
     it should "calculate simple aggregates" in {
       val res1 = ddf.aggregate("year, month, min(depdelay), max(arrdelay)")
@@ -34,16 +34,16 @@ trait AnalyticsBehaviors extends BaseBehaviors {
       ddf.groupBy(l4, l3).getNumRows should be(1)
 
       ddf.groupBy(l1).agg(l2).getNumRows() should be(13)
-      ddf.groupBy(Lists.newArrayList("origin")).agg(Lists.newArrayList("metrics = count(*)")).getNumRows() should be(3)
-      ddf.groupBy(Lists.newArrayList("origin")).agg(Lists.newArrayList("metrics = count(1)")).getNumRows() should be(3)
-      ddf.groupBy(Lists.newArrayList("origin")).agg(Lists.newArrayList("metrics = count(dayofweek)")).getNumRows() should be(3)
-      ddf.groupBy(Lists.newArrayList("origin")).agg(Lists.newArrayList("metrics = avg(arrdelay)")).getNumRows() should be(3)
+      ddf.groupBy(Lists.newArrayList("origin")).agg(Lists.newArrayList("metrics = count(*)")).getNumRows should be(3)
+      ddf.groupBy(Lists.newArrayList("origin")).agg(Lists.newArrayList("metrics = count(1)")).getNumRows should be(3)
+      ddf.groupBy(Lists.newArrayList("origin")).agg(Lists.newArrayList("metrics = count(dayofweek)")).getNumRows should be(3)
+      ddf.groupBy(Lists.newArrayList("origin")).agg(Lists.newArrayList("metrics = avg(arrdelay)")).getNumRows should be(3)
     }
   }
 
-  def ddfWithBinningHandler(): Unit ={
+  def ddfWithBinningHandler(implicit l: Loader): Unit = {
     it should "bin the ddf" in {
-      val ddf = loadAirlineDDF()
+      val ddf = l.loadAirlineDDF()
       val newDDF: DDF = ddf.binning("dayofweek", "EQUALINTERVAL", 2, null, true, true)
 
       newDDF.getSchemaHandler.getColumn("dayofweek").getColumnClass should be(ColumnClass.FACTOR)
@@ -59,8 +59,8 @@ trait AnalyticsBehaviors extends BaseBehaviors {
     }
   }
 
-  def ddfWithStatisticsHandler(): Unit = {
-    val ddf = loadAirlineNADDF()
+  def ddfWithStatisticsHandler(implicit l: Loader): Unit = {
+    val ddf = l.loadAirlineNADDF()
 
     it should "calculate summary and simple summary" in {
 

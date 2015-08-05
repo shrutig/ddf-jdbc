@@ -59,6 +59,15 @@ lazy val jdbcTest = project.in(file("jdbc-test")).dependsOn(jdbc).settings(commo
   )
 )
 
+lazy val aws = project.in(file("aws")).dependsOn(jdbc,jdbcTest % "test->test").settings(commonSettings: _*).settings(
+  name := "aws",
+  pomExtra := submodulePom,
+  libraryDependencies ++= Seq(
+    "com.amazonaws" % "aws-java-sdk" % "1.10.8",
+    "postgresql" % "postgresql" % "9.1-901-1.jdbc4"
+  )
+)
+
 resolvers ++= Seq("Adatao Mvnrepos Snapshots" at "https://raw.github.com/adatao/mvnrepos/master/snapshots",
   "Adatao Mvnrepos Releases" at "https://raw.github.com/adatao/mvnrepos/master/releases")
 

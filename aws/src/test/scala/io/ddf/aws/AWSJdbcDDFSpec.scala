@@ -1,13 +1,15 @@
-package io.ddf.jdbc
+package io.ddf.aws
 
 import io.ddf.DDFManager
+import io.ddf.jdbc.{Loader, JdbcDDFManager}
 import io.ddf.jdbc.analytics.AnalyticsBehaviors
 import io.ddf.jdbc.content.ContentBehaviors
 import io.ddf.jdbc.etl.ETLBehaviors
 import org.scalatest.FlatSpec
 
-class H2JdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors {
-  implicit val loader = H2Loader
+class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors {
+  implicit val loader = AWSLoader
+
   it should behave like ddfWithAddressing
   it should behave like ddfWithAggregationHandler
   it should behave like ddfWithStatisticsHandler
@@ -26,13 +28,10 @@ class H2JdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavio
 }
 
 object ManagerFactory {
-  val jdbcDDFManager = DDFManager.get("jdbc").asInstanceOf[JdbcDDFManager]
+  val jdbcDDFManager = DDFManager.get("aws").asInstanceOf[JdbcDDFManager]
 }
 
-object H2Loader extends Loader {
-  override def engine: String = "jdbc"
-
+object AWSLoader extends Loader {
+  override def engine: String = "aws"
   override def jdbcDDFManager: DDFManager = ManagerFactory.jdbcDDFManager
 }
-
-

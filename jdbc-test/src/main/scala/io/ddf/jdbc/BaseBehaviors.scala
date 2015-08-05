@@ -3,32 +3,12 @@ package io.ddf.jdbc
 import io.ddf.{DDF, DDFManager}
 import org.scalatest.{FlatSpec, Matchers}
 
-trait BaseBehaviors extends Matchers with Loader {
-  this: FlatSpec =>
+trait BaseBehaviors extends Matchers
 
-  def ddfWithAddressing: Unit = {
-    val ddf = loadAirlineDDF()
-    it should "load data from file" in {
-      ddf.getNamespace should be("adatao")
-      ddf.getColumnNames should have size (29)
-
-    }
-
-    it should "be addressable via URI" in {
-      ddf.getUri should be("ddf://" + ddf.getNamespace + "/" + ddf.getName)
-      jdbcDDFManager.getDDFByURI("ddf://" + ddf.getNamespace + "/" + ddf.getName) should be(ddf)
-    }
-  }
-
-}
-
-object ManagerFactory {
-  val jdbcDDFManager = DDFManager.get("jdbc").asInstanceOf[JdbcDDFManager]
-}
 
 trait Loader {
-  val jdbcDDFManager = ManagerFactory.jdbcDDFManager
-  var lDdf: DDF = null
+  def engine:String
+  def jdbcDDFManager:DDFManager
 
   def loadIrisTrain(): DDF = {
     try {
