@@ -100,7 +100,6 @@ object DdlCommand {
 object SchemaToCreate {
   def apply(db: String, schema: Schema) = {
     val command = "CREATE TABLE " + schema.getTableName + " (" + schema.getColumns.map { col =>
-      val colType = col.getType
       val sqlType = col.getType match {
         case ColumnType.STRING => "VARCHAR"
         case _ => col.getType

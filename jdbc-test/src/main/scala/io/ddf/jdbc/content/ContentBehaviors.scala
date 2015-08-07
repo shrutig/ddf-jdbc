@@ -18,6 +18,7 @@ trait ContentBehaviors extends BaseBehaviors {
 
   def ddfWithAddressing(implicit l: Loader): Unit = {
     val ddf = l.loadAirlineDDF()
+
     it should "load data from file" in {
       ddf.getNamespace should be("adatao")
       ddf.getColumnNames should have size 29

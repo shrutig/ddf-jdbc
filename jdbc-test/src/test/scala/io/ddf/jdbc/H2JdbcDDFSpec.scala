@@ -32,7 +32,7 @@ object ManagerFactory {
 object H2Loader extends Loader {
   override def engine: String = "jdbc"
 
-  override def jdbcDDFManager: DDFManager = ManagerFactory.jdbcDDFManager
+  override def jdbcDDFManager: JdbcDDFManager = ManagerFactory.jdbcDDFManager
 }
 
 

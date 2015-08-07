@@ -1,10 +1,10 @@
 package io.ddf.aws
 
 import io.ddf.DDFManager
-import io.ddf.jdbc.{Loader, JdbcDDFManager}
 import io.ddf.jdbc.analytics.AnalyticsBehaviors
 import io.ddf.jdbc.content.ContentBehaviors
 import io.ddf.jdbc.etl.ETLBehaviors
+import io.ddf.jdbc.{JdbcDDFManager, Loader}
 import org.scalatest.FlatSpec
 
 class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors {
@@ -33,5 +33,11 @@ object ManagerFactory {
 
 object AWSLoader extends Loader {
   override def engine: String = "aws"
-  override def jdbcDDFManager: DDFManager = ManagerFactory.jdbcDDFManager
+
+  override def jdbcDDFManager: JdbcDDFManager = ManagerFactory.jdbcDDFManager
+
+  override def dropTableIfExists(tableName: String) = {
+    jdbcDDFManager.sql("drop table if exists " + tableName + " cascade")
+  }
+
 }

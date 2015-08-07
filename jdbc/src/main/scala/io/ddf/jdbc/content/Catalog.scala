@@ -8,28 +8,28 @@ import io.ddf.content.Schema.Column
 import scalikejdbc._
 
 trait Catalog {
-  def getViewSchema(db: String, name: String): Schema
+  def getViewSchema(db: String, schemaName: String, tableName: String): Schema
 
-  def getTableSchema(db: String, name: String): Schema
+  def getTableSchema(db: String, schemaName: String, tableName: String): Schema
 }
 
 object SimpleCatalog extends Catalog {
-  def getViewSchema(db: String, name: String): Schema = {
-    getTableSchema(db, name)
+  def getViewSchema(db: String, schemaName: String, viewName: String): Schema = {
+    getTableSchema(db, schemaName, viewName)
   }
 
-  def getTableSchema(db: String, name: String): Schema = {
+  def getTableSchema(db: String, schemaName: String, tableName: String): Schema = {
     using(ConnectionPool(db).borrow()) { conn: Connection =>
-      val columns = listColumnsForTable(conn, name)
-      new Schema(name, columns)
+      val columns = listColumnsForTable(conn, null, tableName)
+      new Schema(tableName, columns)
     }
   }
 
   @throws(classOf[SQLException])
-  def listColumnsForTable(connection: Connection, tableName: String): util.List[Column] = {
+  def listColumnsForTable(connection: Connection, schemaName: String, tableName: String): util.List[Column] = {
     val columns: util.List[Column] = new util.ArrayList[Column]
     val metadata: DatabaseMetaData = connection.getMetaData
-    val resultSet: ResultSet = metadata.getColumns(null, null, tableName.toUpperCase, null)
+    val resultSet: ResultSet = metadata.getColumns(null, schemaName, tableName.toUpperCase, null)
     while (resultSet.next) {
       val columnName = resultSet.getString(4)
       var columnTypeStr = resultSet.getString(6)

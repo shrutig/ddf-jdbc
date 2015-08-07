@@ -18,6 +18,8 @@ class JdbcDDFManager extends DDFManager {
 
   def defaultDataSourceName = "remote"
 
+  def baseSchema = Config.getValue(getEngine, "baseSchema")
+
   ConnectionPool.add("remote", new DataSourceConnectionPool(dataSource))
 
 
@@ -79,6 +81,5 @@ class JdbcDDFManager extends DDFManager {
       case (col, i) => new Schema.Column(headers(i), Utils.determineType(col, doPreferDouble, false))
     }
   }
-
 
 }
