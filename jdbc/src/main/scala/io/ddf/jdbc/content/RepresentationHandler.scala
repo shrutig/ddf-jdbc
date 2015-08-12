@@ -28,12 +28,13 @@ object Representations {
 
   class View2SqlArrayResult(@transient ddf: DDF) extends ConvertFunction(ddf) {
     val ddfManager: JdbcDDFManager = ddf.getManager.asInstanceOf[JdbcDDFManager]
+    implicit val catalog = ddfManager.catalog
 
     override def apply(representation: Representation): Representation = {
       val view = representation.getValue.asInstanceOf[TableNameRepresentation]
       //Override where required
-      val sqlArrayResult = SqlArrayResultCommand(ddfManager.defaultDataSourceName, ddf.getName, String.format("SELECT * FROM %s", view.viewName))
-      new Representation(sqlArrayResult, SQL_ARRAY_RESULT)
+      val sqlArrayResult = SqlArrayResultCommand(ddfManager.defaultDataSourceName, ddfManager.baseSchema, ddf.getName, String.format("SELECT * FROM %s", view.viewName))
+      new Representation(new SqlArrayResult(view.schema, sqlArrayResult.result), SQL_ARRAY_RESULT)
     }
   }
 

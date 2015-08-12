@@ -3,7 +3,7 @@ package io.ddf.jdbc
 
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import io.ddf.content.Schema
-import io.ddf.jdbc.content.{Load, LoadCommand, SchemaToCreate}
+import io.ddf.jdbc.content._
 import io.ddf.jdbc.utils.Utils
 import io.ddf.misc.Config
 import io.ddf.{DDF, DDFManager}
@@ -13,6 +13,8 @@ import scalikejdbc.{ConnectionPool, DataSourceConnectionPool}
 class JdbcDDFManager extends DDFManager {
 
   override def getEngine: String = "jdbc"
+
+  def catalog: Catalog = SimpleCatalog
 
   val dataSource = initializeConnectionPool(getEngine)
 
@@ -40,11 +42,13 @@ class JdbcDDFManager extends DDFManager {
     config.setUsername(jdbcUser)
     config.setPassword(jdbcPassword)
     config.setMaximumPoolSize(poolSize)
+    config.setCatalog(baseSchema)
     new HikariDataSource(config)
   }
 
 
   override def loadTable(fileURL: String, fieldSeparator: String): DDF = {
+    implicit val cat = catalog
     val tableName = getDummyDDF.getSchemaHandler.newTableName()
     val load = new Load(tableName, fieldSeparator.charAt(0), fileURL, null, null, true)
     val lines = LoadCommand.getLines(load, 5)
@@ -53,7 +57,7 @@ class JdbcDDFManager extends DDFManager {
     val schema = new Schema(tableName, colInfo)
     val createCommand = SchemaToCreate(defaultDataSourceName, schema)
     val ddf = sql2ddf(createCommand)
-    LoadCommand(this, defaultDataSourceName, load)
+    LoadCommand(this, defaultDataSourceName, baseSchema, load)
     ddf
   }
 

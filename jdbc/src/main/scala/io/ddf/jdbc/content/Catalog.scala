@@ -11,6 +11,8 @@ trait Catalog {
   def getViewSchema(db: String, schemaName: String, tableName: String): Schema
 
   def getTableSchema(db: String, schemaName: String, tableName: String): Schema
+
+  def setSchema(schemaName: String)(implicit session: DBSession)
 }
 
 object SimpleCatalog extends Catalog {
@@ -40,5 +42,9 @@ object SimpleCatalog extends Catalog {
       columns.add(column)
     }
     columns
+  }
+
+  override def setSchema(schemaName: String)(implicit session: DBSession): Unit = {
+    //do nothing
   }
 }

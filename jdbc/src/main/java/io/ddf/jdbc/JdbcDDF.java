@@ -3,14 +3,11 @@ package io.ddf.jdbc;
 
 import io.ddf.DDF;
 import io.ddf.DDFManager;
-import io.ddf.Factor;
-import io.ddf.content.IHandleRepresentations;
 import io.ddf.content.Schema;
 import io.ddf.exception.DDFException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class JdbcDDF extends DDF {
 
@@ -33,4 +30,12 @@ public class JdbcDDF extends DDF {
     super.initialize(manager, data, typeSpecs, namespace, name, schema);
   }
 
+  @Override public List<String> getColumnNames() {
+    List<String> colNames = getSchema().getColumnNames();
+    List<String> lowerCaseColNames = new ArrayList<>(colNames.size());
+    for (String col : colNames) {
+      lowerCaseColNames.add(col.toLowerCase());
+    }
+    return lowerCaseColNames;
+  }
 }

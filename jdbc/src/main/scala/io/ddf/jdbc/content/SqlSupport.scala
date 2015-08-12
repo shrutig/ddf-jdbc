@@ -24,9 +24,10 @@ object SqlCommand {
 
   private final val logger = LoggerFactory.getLogger(getClass)
 
-  def apply(db: String, name: String, command: String, maxRows: Int, separator: String) = {
-    val schema = new Schema(name, "")
-    val list = NamedDB(db) readOnly { implicit session =>
+  def apply(db: String, schemaName: String, tableName: String, command: String, maxRows: Int, separator: String)(implicit catalog: Catalog) = {
+    val schema = new Schema(tableName, "")
+    val list = NamedDB(db) localTx { implicit session =>
+      catalog.setSchema(schemaName)
       SQL(command).map { rs =>
         val actualRS = rs.underlying
         val md = actualRS.getMetaData
@@ -56,13 +57,14 @@ object SqlCommand {
 
 object SqlArrayResultCommand {
 
-  def apply(db: String, name: String, command: String): SqlArrayResult = {
-    apply(db, name, command, Integer.MAX_VALUE)
+  def apply(db: String, schemaName: String, tableName: String, command: String)(implicit catalog: Catalog): SqlArrayResult = {
+    apply(db, schemaName, tableName, command, Integer.MAX_VALUE)
   }
 
-  def apply(db: String, name: String, command: String, maxRows: Int): SqlArrayResult = {
-    val schema = new Schema(name, "")
-    val list = NamedDB(db) readOnly { implicit session =>
+  def apply(db: String, schemaName: String, tableName: String, command: String, maxRows: Int)(implicit catalog: Catalog): SqlArrayResult = {
+    val schema = new Schema(tableName, "")
+    val list = NamedDB(db) localTx { implicit session =>
+      catalog.setSchema(schemaName)
       SQL(command).map { rs =>
         val actualRS = rs.underlying
         val md = actualRS.getMetaData
@@ -90,8 +92,9 @@ object SqlArrayResultCommand {
 
 
 object DdlCommand {
-  def apply(db: String, command: String) = {
+  def apply(db: String, schemaName: String, command: String)(implicit catalog: Catalog) = {
     NamedDB(db) autoCommit { implicit session =>
+      catalog.setSchema(schemaName)
       SQL(command).execute().apply()
     }
   }
@@ -115,16 +118,16 @@ object LoadCommand {
 
   class SerCsvParserSettings extends CsvParserSettings with Serializable
 
-  def apply(ddfManager: DDFManager, db: String, command: String): String = {
+  def apply(ddfManager: DDFManager, db: String, schemaName: String, command: String)(implicit catalog: Catalog): String = {
     val l = Parsers.parseLoad(command)
-    apply(ddfManager, db, l)
+    apply(ddfManager, db, schemaName, l)
   }
 
-  def apply(ddfManager: DDFManager, db: String, l: Load): String = {
+  def apply(ddfManager: DDFManager, db: String, schemaName: String, l: Load)(implicit catalog: Catalog): String = {
     val lines: util.List[Array[String]] = getLines(l)
     val ddf = ddfManager.getDDFByName(l.tableName)
     val schema = ddf.getSchema
-    insert(db, schema, lines, l.useDefaults)
+    insert(db, schemaName, schema, lines, l.useDefaults)
     l.tableName
   }
 
@@ -166,11 +169,12 @@ object LoadCommand {
     parser
   }
 
-  def insert(db: String, schema: Schema, lines: Seq[Array[String]], useDefaults: Boolean): Seq[Int] = {
+  def insert(db: String, schemaName: String, schema: Schema, lines: Seq[Array[String]], useDefaults: Boolean)(implicit catalog: Catalog): Seq[Int] = {
     val columns = schema.getColumns
     val colStr = columns.map(col => col.getName).mkString(",")
     val paramStr = columns.map(col => "?").mkString(",")
     NamedDB(db) localTx { implicit session =>
+      catalog.setSchema(schemaName)
       val batchParams: Seq[Seq[Any]] = lines.map(line => parseRow(line, columns, useDefaults))
       val sql = "insert into " + schema.getTableName + " (" + colStr + ") values (" + paramStr + ") "
       SQL(sql).batch(batchParams: _*).apply()

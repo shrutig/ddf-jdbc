@@ -18,8 +18,7 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
   //Override where required
   protected def defaultDataSourceName = ddfManager.defaultDataSourceName
 
-  //Override where required
-  protected def catalog: Catalog = SimpleCatalog
+  implicit val catalog = ddfManager.catalog
 
   override def sql2ddf(command: String): DDF = {
     this.sql2ddf(command, null, defaultDataSourceName, null)
@@ -44,19 +43,19 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
   override def sql2ddf(command: String, schema: Schema, dataSource: String, dataFormat: DataFormat): DDF = {
     val dbName = if (dataSource == null) defaultDataSourceName else dataSource
     if (StringUtils.startsWithIgnoreCase(command.trim, "LOAD")) {
-      val tableName = LoadCommand(ddfManager, dbName, command)
+      val tableName = LoadCommand(ddfManager, baseSchema, dbName, command)
       val newDDF = ddfManager.getDDFByName(tableName)
       newDDF
     } else if (StringUtils.startsWithIgnoreCase(command.trim, "CREATE")) {
       val tableName = Parsers.parseCreate(command).tableName
-      DdlCommand(dbName, command)
+      DdlCommand(dbName, baseSchema, command)
       val tableSchema = if (schema == null) catalog.getTableSchema("remote", baseSchema, tableName) else schema
       val emptyRep = TableNameRepresentation(tableName, tableSchema)
       ddf.getManager.newDDF(this.getManager, emptyRep, Array(Representations.VIEW), ddf.getNamespace, tableName, tableSchema)
     } else {
-      val viewName = ddf.getSchemaHandler.newTableName()
+      val viewName = genTableName(8)
       //View will allow select commands
-      DdlCommand(dbName, "CREATE VIEW " + viewName + " AS (" + command + ")")
+      DdlCommand(dbName, baseSchema, "CREATE VIEW " + viewName + " AS (" + command + ")")
       val viewSchema = if (schema == null) catalog.getViewSchema("remote", baseSchema, viewName) else schema
       val viewRep = TableNameRepresentation(viewName, viewSchema)
       ddf.getManager.newDDF(this.getManager, viewRep, Array(Representations.VIEW), ddf.getNamespace, viewName, viewSchema)
@@ -75,19 +74,34 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
     val maxRowsInt: Int = if (maxRows == null) Integer.MAX_VALUE else maxRows
     val dbName = if (dataSource == null) defaultDataSourceName else dataSource
     if (StringUtils.startsWithIgnoreCase(command.trim, "DROP")) {
-      DdlCommand(dbName, command)
+      DdlCommand(dbName, baseSchema, command)
       new SqlResult(null, Collections.singletonList("0"))
     } else if (StringUtils.startsWithIgnoreCase(command.trim, "LOAD")) {
-      LoadCommand(ddfManager, dbName, command)
+      LoadCommand(ddfManager, dbName, baseSchema, command)
       new SqlResult(null, Collections.singletonList("0"))
     } else if (StringUtils.startsWithIgnoreCase(command.trim, "CREATE")) {
       sql2ddf(command, null, dbName)
       new SqlResult(null, Collections.singletonList("0"))
     } else {
       val tableName = ddf.getSchemaHandler.newTableName()
-      SqlCommand(dbName, tableName, command, maxRowsInt, "\t")
+      SqlCommand(dbName, baseSchema, tableName, command, maxRowsInt, "\t")
     }
   }
 
+  val possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  val possibleText = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
+  def genTableName(length: Int) = {
+    def random(possible: String) = possible.charAt(Math.floor(Math.random() * possible.length).toInt)
+    val text = new StringBuffer
+    var i = 0
+    while (i < length) {
+      if (i == 0)
+        text.append(random(possibleText))
+      else
+        text.append(random(possible))
+      i = i + 1
+    }
+    text.toString;
+  }
 }

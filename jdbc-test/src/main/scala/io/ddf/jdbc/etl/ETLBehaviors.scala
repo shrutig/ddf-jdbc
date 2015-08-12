@@ -2,23 +2,25 @@ package io.ddf.jdbc.etl
 
 import java.util.Collections
 
+import com.google.common.collect.Lists
 import io.ddf.DDF
 import io.ddf.analytics.Summary
 import io.ddf.etl.IHandleMissingData.{Axis, NAChecking}
-import io.ddf.etl.{TransformationHandler => DDFT}
 import io.ddf.etl.Types.JoinType
-import io.ddf.jdbc.{Loader, BaseBehaviors}
+import io.ddf.etl.{TransformationHandler => DDFT}
+import io.ddf.jdbc.BetterList._
 import io.ddf.jdbc.content.{Representations, SqlArrayResult}
+import io.ddf.jdbc.{BaseBehaviors, Loader}
 import io.ddf.types.AggregateTypes.AggregateFunction
 import org.scalatest.FlatSpec
-import com.google.common.collect.Lists
-import scala.collection.JavaConverters._
+
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 trait ETLBehaviors extends BaseBehaviors {
   this: FlatSpec =>
 
-  def ddfWithBasicJoinSupport(implicit l:Loader): Unit = {
+  def ddfWithBasicJoinSupport(implicit l: Loader): Unit = {
     val airlineDDF = l.loadAirlineDDF()
     val yearNamesDDF = l.loadYearNamesDDF()
 
@@ -32,10 +34,10 @@ trait ETLBehaviors extends BaseBehaviors {
       val list = seqAsJavaList(joinedDDF.sql("SELECT DISTINCT YEAR FROM " + joinedDDF.getTableName, "Error").getRows)
       list.size should be(2) // only 2 values i.e 2008 and 2010 have values in both tables
       rep.schema.getNumColumns should be(31) //29 columns in first plus 2 in second
-      val colNames = joinedDDF.getSchema.getColumnNames
-      colNames.contains("YEAR") should be(true)
+      val colNames = asBetterList(joinedDDF.getSchema.getColumnNames)
+      colNames.containsIgnoreCase("YEAR") should be(true)
       //check if the names from second ddf have been added to the schema
-      colNames.contains("R_NAME") should be(true)
+      colNames.containsIgnoreCase("R_NAME") should be(true)
 
     }
 
@@ -51,14 +53,14 @@ trait ETLBehaviors extends BaseBehaviors {
       list.size should be(3) // 3 distinct values in airline years 2008,2009,2010
       val first = list.get(0)
       rep.schema.getNumColumns should be(31) //29 columns in first plus 2 in second
-      val colNames = joinedDDF.getSchema.getColumnNames
-      colNames.contains("YEAR") should be(true)
+      val colNames = asBetterList(joinedDDF.getSchema.getColumnNames)
+      colNames.containsIgnoreCase("YEAR") should be(true)
       //check if the names from second ddf have been added to the schema
-      colNames.contains("R_NAME") should be(true)
+      colNames.containsIgnoreCase("R_NAME") should be(true)
     }
   }
 
-  def ddfWithSemiJoinSupport(implicit l:Loader): Unit = {
+  def ddfWithSemiJoinSupport(implicit l: Loader): Unit = {
 
     val airlineDDF = l.loadAirlineDDF()
     val yearNamesDDF = l.loadYearNamesDDF()
@@ -74,16 +76,15 @@ trait ETLBehaviors extends BaseBehaviors {
       list.size should be(2) // only 2 values i.e 2008 and 2010 have values in both tables
       val first = list.get(0)
       rep.schema.getNumColumns should be(29) //only left columns should be fetched
-      val colNames = joinedDDF.getSchema.getColumnNames
-      colNames.contains("YEAR") should be(true)
+      val colNames = asBetterList(joinedDDF.getSchema.getColumnNames)
+      colNames.containsIgnoreCase("YEAR") should be(true)
       //check if the names from second ddf have been added to the schema
-      colNames.contains("R_NAME") should be(false)
-
+      colNames.containsIgnoreCase("R_NAME") should be(false)
 
     }
   }
 
-  def ddfWithFullOuterJoinSupport(implicit l:Loader): Unit = {
+  def ddfWithFullOuterJoinSupport(implicit l: Loader): Unit = {
 
     val airlineDDF = l.loadAirlineDDF()
     val yearNamesDDF = l.loadYearNamesDDF()
@@ -98,15 +99,15 @@ trait ETLBehaviors extends BaseBehaviors {
       list.size should be(5) //over all 5 distinct years 2007 - 2011 across both tables
       val first = list.get(0)
       rep.schema.getNumColumns should be(31) //29 columns in first plus 2 in second
-      val colNames = joinedDDF.getSchema.getColumnNames
-      colNames.contains("YEAR") should be(true)
+      val colNames = asBetterList(joinedDDF.getSchema.getColumnNames)
+      colNames.containsIgnoreCase("YEAR") should be(true)
       //check if the names from second ddf have been added to the schema
-      colNames.contains("R_NAME") should be(true)
+      colNames.containsIgnoreCase("R_NAME") should be(true)
 
     }
   }
 
-  def ddfWithRightOuterJoinSupport(implicit l:Loader): Unit = {
+  def ddfWithRightOuterJoinSupport(implicit l: Loader): Unit = {
 
     val airlineDDF = l.loadAirlineDDF()
     val yearNamesDDF = l.loadYearNamesDDF()
@@ -122,14 +123,14 @@ trait ETLBehaviors extends BaseBehaviors {
       list.size should be(4) // 4 distinct values in airline years 2007,2008,2010,2011
       val first = list.get(0)
       rep.schema.getNumColumns should be(31) //29 columns in first plus 2 in second
-      val colNames = joinedDDF.getSchema.getColumnNames
-      colNames.contains("YEAR") should be(true)
+      val colNames = asBetterList(joinedDDF.getSchema.getColumnNames)
+      colNames.containsIgnoreCase("YEAR") should be(true)
       //check if the names from second ddf have been added to the schema
-      colNames.contains("R_NAME") should be(true)
+      colNames.containsIgnoreCase("R_NAME") should be(true)
     }
   }
 
-  def ddfWithMissingDataDropSupport(implicit l:Loader): Unit = {
+  def ddfWithMissingDataDropSupport(implicit l: Loader): Unit = {
     val missingData = l.loadAirlineNADDF()
 
     it should "drop all rows with NA values" in {
@@ -170,36 +171,34 @@ trait ETLBehaviors extends BaseBehaviors {
     }
   }
 
-  def ddfWithMissingDataFillSupport(implicit l:Loader): Unit = {
-    val missingData = l.loadAirlineNADDF()
-
+  def ddfWithMissingDataFillSupport(implicit l: Loader): Unit = {
 
     it should "fill by value" in {
-      val ddf = l.loadAirlineDDF()
-      val ddf1: DDF = ddf.VIEWS.project(Lists.newArrayList("YEAR", "LateAircraftDelay"))
+      val ddf = l.loadAirlineNADDF()
+      val ddf1: DDF = ddf.VIEWS.project(Lists.newArrayList("year", "lateaircraftdelay"))
       val filledDDF: DDF = ddf1.fillNA("0")
-      val annualDelay = filledDDF.aggregate("YEAR, sum(LateAircraftDelay)").get("2008")(0)
+      val annualDelay = filledDDF.aggregate("year, sum(lateaircraftdelay)").get("2008")(0)
       annualDelay should be(282.0 +- 0.1)
     }
 
     it should "fill by dictionary" in {
-      val ddf = l.loadAirlineDDF()
-      val ddf1: DDF = ddf.VIEWS.project(Lists.newArrayList("YEAR", "securitydelay", "LateAircraftDelay"))
-      val dict: Map[String, String] = Map("YEAR" -> "2000", "securitydelay" -> "0", "LateAircraftDelay" -> "1")
+      val ddf = l.loadAirlineNADDF()
+      val ddf1: DDF = ddf.VIEWS.project(Lists.newArrayList("year", "securitydelay", "lateaircraftdelay"))
+      val dict: Map[String, String] = Map("year" -> "2000", "securitydelay" -> "0", "lateaircraftdelay" -> "1")
       val filledDDF = ddf1.getMissingDataHandler.fillNA(null, null, 0, null, dict, null)
-      val annualDelay = filledDDF.aggregate("YEAR, sum(LateAircraftDelay)").get("2008")(0)
-      annualDelay should be(302.0 +- 0.1)
+      val annualDelay = filledDDF.aggregate("year, sum(lateaircraftdelay)").get("2008")(0)
+      annualDelay should be(302.0 +- 1)
     }
 
     it should "fill by aggregate function" in {
-      val ddf = l.loadAirlineDDF()
-      val ddf1: DDF = ddf.VIEWS.project(Lists.newArrayList("YEAR", "securitydelay", "LateAircraftDelay"))
+      val ddf = l.loadAirlineNADDF()
+      val ddf1: DDF = ddf.VIEWS.project(Lists.newArrayList("year", "securitydelay", "lateaircraftdelay"))
       val result = ddf1.getMissingDataHandler.fillNA(null, null, 0, AggregateFunction.MEAN, null, null)
       result should not be (null)
     }
   }
 
-  def ddfWithBasicTransformSupport(implicit l:Loader): Unit ={
+  def ddfWithBasicTransformSupport(implicit l: Loader): Unit = {
     val ddf = l.loadAirlineDDF().sql2ddf("select year, month, deptime, arrtime, distance, arrdelay, depdelay from airline")
 
     it should "transform scale min max" in {
@@ -256,11 +255,11 @@ trait ETLBehaviors extends BaseBehaviors {
     }
   }
 
-  def ddfWithSqlHandler(implicit l:Loader): Unit ={
-    val airlineDDF = l.loadAirlineDDF()
+  def ddfWithSqlHandler(implicit l: Loader): Unit = {
+
 
     it should "create table and load data from file" in {
-      val ddf = airlineDDF
+      val ddf = l.loadAirlineDDF()
       ddf.getColumnNames should have size 29
 
       //MetaDataHandler
@@ -272,11 +271,11 @@ trait ETLBehaviors extends BaseBehaviors {
 
       //mean:1084.26 stdev:999.14 var:998284.8 cNA:0 count:31 min:4.0 max:3920.0
       val randomSummary = summaries(8)
-      assert(randomSummary.variance()  >= 998284)
+      assert(randomSummary.variance() >= 998284)
     }
 
     it should "run a simple sql command" in {
-      val ddf = airlineDDF
+      val ddf = l.loadAirlineDDF()
       val ddf1 = ddf.sql2ddf("select Year,Month from airline")
       val rep = ddf1.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult]
       val collection = rep.result
@@ -287,7 +286,7 @@ trait ETLBehaviors extends BaseBehaviors {
     }
 
     it should "run a sql command with where" in {
-      val ddf = airlineDDF
+      val ddf = l.loadAirlineDDF()
       val ddf1 = ddf.sql2ddf("select Year,Month from airline where Year > 2008 AND Month > 1")
       val rep = ddf1.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult]
       val collection = rep.result

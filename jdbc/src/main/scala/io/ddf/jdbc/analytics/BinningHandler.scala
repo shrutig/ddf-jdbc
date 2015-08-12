@@ -119,13 +119,13 @@ class BinningHandler(ddf: DDF) extends io.ddf.analytics.ABinningHandler(ddf) {
 
   def createTransformSqlCmd(columnName: String, intervals: Array[String], includeLowest: Boolean, right: Boolean): String = {
     val sqlCmd = "SELECT %s FROM %s".format(ddf.getSchemaHandler.getColumns.map {
-      col ⇒
-        if (!columnName.equals(col.getName)) {
-          col.getName
+      column ⇒
+        if (!columnName.equals(column.getName)) {
+          column.getName
         }
         else {
           val b = breaks.map(_.asInstanceOf[Object])
-
+          val col = column.getName
           val caseLowest = if (right) {
             if (includeLowest)
               String.format("when ((%s >= %s) and (%s <= %s)) then %s ", col, b(0), col, b(1), intervals(0))

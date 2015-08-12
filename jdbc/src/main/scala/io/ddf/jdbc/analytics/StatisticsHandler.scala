@@ -18,7 +18,7 @@ import scala.util.Try
 class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
 
   val ddfManager: JdbcDDFManager = ddf.getManager.asInstanceOf[JdbcDDFManager]
-
+  implicit val catalog = ddfManager.catalog
   //count all,sum,mean,variance,notNullCount,min,max
   protected def SUMMARY_FUNCTIONS = "COUNT(*), SUM(%s), AVG(%s), VAR_SAMP(%s),COUNT(%s), MIN(%s), MAX(%s)"
 
@@ -46,7 +46,7 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
     var sql: String = StringUtils.join(sqlCommand, ", ")
     val tableName = this.getDDF.getTableName
     sql = String.format("select %s from %s", sql, tableName)
-    val result = SqlArrayResultCommand(ddfManager.defaultDataSourceName, tableName, sql).result.get(0)
+    val result = SqlArrayResultCommand(ddfManager.defaultDataSourceName, ddfManager.baseSchema, tableName, sql).result.get(0)
     var i: Int = 0
     numericColumns.foreach { column =>
       val count = if (result(i) == null) -1 else result(i).toString.toLong
@@ -110,7 +110,7 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
     var sql: String = StringUtils.join(sqlCommand, ", ")
     val tableName = this.getDDF.getTableName
     sql = String.format("select %s from %s", sql, tableName)
-    val result = SqlArrayResultCommand(ddfManager.defaultDataSourceName, tableName, sql).result.get(0)
+    val result = SqlArrayResultCommand(ddfManager.defaultDataSourceName, ddfManager.baseSchema, tableName, sql).result.get(0)
     var i: Int = 0
     for (column <- numericColumns) {
       val summary: NumericSimpleSummary = new NumericSimpleSummary

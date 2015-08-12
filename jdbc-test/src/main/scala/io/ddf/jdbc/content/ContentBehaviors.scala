@@ -62,10 +62,10 @@ trait ContentBehaviors extends BaseBehaviors {
     }
 
     it should "persist and unpersist a jdbc DDF" in {
-      val manager: DDFManager = DDFManager.get("jdbc")
+      val manager: DDFManager = DDFManager.get(l.engine)
       val ddf: DDF = manager.newDDF
       val uri: PersistenceUri = ddf.persist
-      uri.getEngine should be("jdbc")
+      uri.getEngine should be(l.engine)
       new File(uri.getPath).exists() should be(true)
       ddf.unpersist()
     }
@@ -89,7 +89,7 @@ trait ContentBehaviors extends BaseBehaviors {
       val columns = ddf.getSchema.getColumns
       columns should not be null
       columns.length should be(29)
-      columns.head.getName should be("YEAR")
+      columns.head.getName.toUpperCase should be("YEAR")
     }
 
     it should "test get factors on DDF" in {

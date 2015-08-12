@@ -22,8 +22,10 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
 
   it should behave like ddfWithBasicJoinSupport
   it should behave like ddfWithMissingDataDropSupport
+  it should behave like ddfWithMissingDataFillSupport
   it should behave like ddfWithSqlHandler
   it should behave like ddfWithBasicTransformSupport
+
 
 }
 
@@ -40,4 +42,5 @@ object AWSLoader extends Loader {
     jdbcDDFManager.sql("drop table if exists " + tableName + " cascade")
   }
 
+  override def MT_CARS_CREATE = "CREATE TABLE mtcars (mpg decimal,cyl int, disp decimal, hp int, drat decimal, wt decimal, qsec decimal, vs int, am int, gear int, carb int)"
 }

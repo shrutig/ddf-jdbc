@@ -28,7 +28,9 @@ sleep 0.3
 echo -ne "...            \r"
 echo -ne '\n'
 
-EXAMPLES_DIR="$FWDIR"/flink-examples
+EXAMPLES_DIR="$FWDIR"/jdbc-examples
+
+echo $EXAMPLES_DIR
 
 SHELL_JAR="$FWDIR"/bin/jline2.jar:"$FWDIR"/bin/jshell.jar
 
@@ -36,7 +38,8 @@ DEPS_JARS=$(echo "$FWDIR"/lib_managed/jars/*/*/*.jar | tr ' ' ':')
 
 BUNDLE_JARS=$(echo "$FWDIR"/lib_managed/bundles/*/*/*.jar | tr ' ' ':')
 
-FLINK_JAR="$FWDIR"/flink/target/scala-2.10/*:$DEPS_JARS:$BUNDLE_JARS
+FLINK_JAR="$FWDIR"/jdbc/target/scala-2.10/classes:$DEPS_JARS:$BUNDLE_JARS
+echo $FLINK_JAR
 MAIN_CLASS="bsh.Interpreter"
 CONSOLE_CLASS="jline.console.internal.ConsoleRunner"
 
