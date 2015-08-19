@@ -1,4 +1,4 @@
-package io.ddf.aws
+package io.ddf.postgres
 
 import io.ddf.DDFManager
 import io.ddf.jdbc.analytics.AnalyticsBehaviors
@@ -7,8 +7,8 @@ import io.ddf.jdbc.etl.ETLBehaviors
 import io.ddf.jdbc.{JdbcDDFManager, Loader}
 import org.scalatest.FlatSpec
 
-class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors {
-  implicit val loader = AWSLoader
+class PostgresJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors {
+  implicit val loader = PostgresLoader
 
   it should behave like ddfWithAddressing
   it should behave like ddfWithAggregationHandler
@@ -33,11 +33,11 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
 }
 
 object ManagerFactory {
-  val jdbcDDFManager = DDFManager.get("aws").asInstanceOf[JdbcDDFManager]
+  val jdbcDDFManager = DDFManager.get("postgres").asInstanceOf[JdbcDDFManager]
 }
 
-object AWSLoader extends Loader {
-  override def engine: String = "aws"
+object PostgresLoader extends Loader {
+  override def engine: String = "postgres"
 
   override def jdbcDDFManager: JdbcDDFManager = ManagerFactory.jdbcDDFManager
 

@@ -6,13 +6,11 @@ object Common {
 
   lazy val rootOrganization = "io"
 
-  lazy val rootProjectName = "ddf"
+  lazy val rootProjectName = "ddf-jdbc"
 
   lazy val ddfVersion = "1.2.0"
 
   lazy val theScalaVersion = "2.10.4"
-
-  lazy val flinkVersion = "0.9.0"
 
   lazy val submodulePom = (
     <!--

@@ -19,6 +19,11 @@ class H2JdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavio
   it should behave like ddfWithViewHandler
 
   it should behave like ddfWithBasicJoinSupport
+  //  it should behave like ddfWithSemiJoinSupport - unsupported
+  //  it should behave like ddfWithFullOuterJoinSupport - unsupported
+  //  it should behave like ddfWithRightOuterJoinSupport - unsupported
+  //  it should behave like ddfWithMissingDataFillSupport - unsupported
+
   it should behave like ddfWithMissingDataDropSupport
   it should behave like ddfWithSqlHandler
   it should behave like ddfWithBasicTransformSupport

@@ -96,7 +96,7 @@ trait ETLBehaviors extends BaseBehaviors {
       val rep = joinedDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult]
       val collection = rep.result
       val list = seqAsJavaList(joinedDDF.sql("SELECT DISTINCT YEAR FROM " + joinedDDF.getTableName, "Error").getRows)
-      list.size should be(5) //over all 5 distinct years 2007 - 2011 across both tables
+      list.size should be(4)
       val first = list.get(0)
       rep.schema.getNumColumns should be(31) //29 columns in first plus 2 in second
       val colNames = asBetterList(joinedDDF.getSchema.getColumnNames)
@@ -120,7 +120,7 @@ trait ETLBehaviors extends BaseBehaviors {
       val collection = rep.result
       collection.foreach(i => println("[" + i.mkString(",") + "]"))
       val list = seqAsJavaList(joinedDDF.sql("SELECT DISTINCT YEAR FROM " + joinedDDF.getTableName, "Error").getRows)
-      list.size should be(4) // 4 distinct values in airline years 2007,2008,2010,2011
+      list.size should be(3) // 3 distinct values in null ,2008,2010
       val first = list.get(0)
       rep.schema.getNumColumns should be(31) //29 columns in first plus 2 in second
       val colNames = asBetterList(joinedDDF.getSchema.getColumnNames)

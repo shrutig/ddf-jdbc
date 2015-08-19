@@ -26,7 +26,7 @@ conflictManager := ConflictManager.strict
 
 commonSettings
 
-lazy val root = project.in(file(".")).aggregate(jdbc, jdbcExamples,jdbcTest)
+lazy val root = project.in(file(".")).aggregate(jdbc, jdbcExamples,jdbcTest,postgres,aws)
 
 val com_adatao_unmanaged = Seq(
   "com.adatao.unmanaged.net.rforge" % "REngine" % "2.1.1.compiled",
@@ -59,12 +59,19 @@ lazy val jdbcTest = project.in(file("jdbc-test")).dependsOn(jdbc).settings(commo
   )
 )
 
-lazy val aws = project.in(file("aws")).dependsOn(jdbc,jdbcTest % "test->test").settings(commonSettings: _*).settings(
+lazy val postgres = project.in(file("postgres")).dependsOn(jdbc,jdbcTest % "test->test").settings(commonSettings: _*).settings(
+  name := "postgres",
+  pomExtra := submodulePom,
+  libraryDependencies ++= Seq(
+    "postgresql" % "postgresql" % "9.1-901-1.jdbc4"
+  )
+)
+
+lazy val aws = project.in(file("aws")).dependsOn(jdbc,jdbcTest,postgres % "test->test").settings(commonSettings: _*).settings(
   name := "aws",
   pomExtra := submodulePom,
   libraryDependencies ++= Seq(
-    "com.amazonaws" % "aws-java-sdk" % "1.10.8",
-    "postgresql" % "postgresql" % "9.1-901-1.jdbc4"
+    "com.amazonaws" % "aws-java-sdk" % "1.10.8"
   )
 )
 
