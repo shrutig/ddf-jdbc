@@ -11,9 +11,13 @@ import java.util.List;
 
 public class JdbcDDF extends DDF {
 
-  public JdbcDDF(DDFManager manager, Object data, Class<?>[] typeSpecs, String namespace, String name, Schema schema)
-      throws DDFException {
-    super(manager, data, typeSpecs, namespace, name, schema);
+  public JdbcDDF(DDFManager manager, Object data, Class<?>[] typeSpecs, String engineName, String namespace,
+      String name, Schema schema) throws DDFException {
+    super(manager, data, typeSpecs, engineName, namespace, name, schema);
+  }
+
+  @Override public DDF copy() throws DDFException {
+    return null;
   }
 
   public JdbcDDF(DDFManager manager, DDFManager defaultManagerIfNull) throws DDFException {
@@ -25,10 +29,6 @@ public class JdbcDDF extends DDF {
     super(manager);
   }
 
-  @Override protected void initialize(DDFManager manager, Object data, Class<?>[] typeSpecs, String namespace,
-      String name, Schema schema) throws DDFException {
-    super.initialize(manager, data, typeSpecs, namespace, name, schema);
-  }
 
   @Override public List<String> getColumnNames() {
     List<String> colNames = getSchema().getColumnNames();

@@ -5,26 +5,25 @@ import java.util
 
 import io.ddf.content.Schema
 import io.ddf.content.Schema.Column
-import scalikejdbc._
 
 trait Catalog {
-  def getViewSchema(db: String, schemaName: String, tableName: String): Schema
+  def getViewSchema(connection: Connection, schemaName: String, tableName: String): Schema
 
-  def getTableSchema(db: String, schemaName: String, tableName: String): Schema
+  def getTableSchema(connection: Connection, schemaName: String, tableName: String): Schema
 
-  def setSchema(schemaName: String)(implicit session: DBSession)
+  def setSchema(connection: Connection, schemaName: String)
+
+  def showTables(connection: Connection, schemaName: String): util.List[String]
 }
 
 object SimpleCatalog extends Catalog {
-  def getViewSchema(db: String, schemaName: String, viewName: String): Schema = {
-    getTableSchema(db, schemaName, viewName)
+  def getViewSchema(connection: Connection, schemaName: String, viewName: String): Schema = {
+    getTableSchema(connection, schemaName, viewName)
   }
 
-  def getTableSchema(db: String, schemaName: String, tableName: String): Schema = {
-    using(ConnectionPool(db).borrow()) { conn: Connection =>
-      val columns = listColumnsForTable(conn, null, tableName)
-      new Schema(tableName, columns)
-    }
+  def getTableSchema(connection: Connection, schemaName: String, tableName: String): Schema = {
+    val columns = listColumnsForTable(connection, null, tableName)
+    new Schema(tableName, columns)
   }
 
   @throws(classOf[SQLException])
@@ -44,7 +43,17 @@ object SimpleCatalog extends Catalog {
     columns
   }
 
-  override def setSchema(schemaName: String)(implicit session: DBSession): Unit = {
+  override def setSchema(connection: Connection, schemaName: String): Unit = {
     //do nothing
+  }
+
+  override def showTables(connection: Connection, schemaName: String): util.List[String] = {
+    val tables: util.List[String] = new util.ArrayList[String]
+    val metadata: DatabaseMetaData = connection.getMetaData
+    val rs: ResultSet = metadata.getTables(null, schemaName, null, null)
+    while (rs.next()) {
+      tables.add(rs.getString("TABLE_NAME"))
+    }
+    tables
   }
 }

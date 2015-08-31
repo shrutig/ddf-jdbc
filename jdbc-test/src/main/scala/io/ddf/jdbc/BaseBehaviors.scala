@@ -1,12 +1,27 @@
 package io.ddf.jdbc
 
 import io.ddf.DDF
+import io.ddf.datasource.{DataSourceURI, JDBCDataSourceCredentials, JDBCDataSourceDescriptor}
+import io.ddf.misc.Config
 import org.scalatest.Matchers
 
 trait BaseBehaviors extends Matchers
 
+object EngineDescriptor {
+  def apply(engine: String) = {
+    val user = Config.getValue(engine, "jdbcUser")
+    val password = Config.getValue(engine, "jdbcPassword")
+    val jdbcUrl = Config.getValue(engine, "jdbcUrl")
+    val dataSourceURI = new DataSourceURI(jdbcUrl)
+    val credentials = new JDBCDataSourceCredentials(user, password)
+    new JDBCDataSourceDescriptor(dataSourceURI, credentials, null)
+  }
+}
+
 
 trait Loader {
+
+
   def engine: String
 
   def jdbcDDFManager: JdbcDDFManager
@@ -14,7 +29,7 @@ trait Loader {
   def baseSchema = jdbcDDFManager.baseSchema
 
   def dropTableIfExists(tableName: String) = {
-    jdbcDDFManager.sql("drop table if exists " + tableName)
+    jdbcDDFManager.drop("drop table if exists " + tableName)
   }
 
   def IRIS_CREATE = "create table iris (flower double, petal double, septal double)"
@@ -25,9 +40,9 @@ trait Loader {
     } catch {
       case e: Exception =>
         dropTableIfExists("iris")
-        jdbcDDFManager.sql(IRIS_CREATE)
+        jdbcDDFManager.create(IRIS_CREATE)
         val filePath = getClass.getResource("/fisheriris.csv").getPath
-        jdbcDDFManager.sql("load '" + filePath + "' into iris")
+        jdbcDDFManager.load("load '" + filePath + "' into iris")
         jdbcDDFManager.getDDFByName("iris")
     }
   }
@@ -47,9 +62,9 @@ trait Loader {
     } catch {
       case e: Exception =>
         dropTableIfExists("airline")
-        jdbcDDFManager.sql(AIRLINE_CREATE)
+        jdbcDDFManager.create(AIRLINE_CREATE)
         val filePath = getClass.getResource("/airline.csv").getPath
-        jdbcDDFManager.sql("load '" + filePath + "' into airline")
+        jdbcDDFManager.load("load '" + filePath + "' into airline")
         ddf = jdbcDDFManager.getDDFByName("airline")
     }
     ddf
@@ -64,9 +79,9 @@ trait Loader {
     } catch {
       case e: Exception =>
         dropTableIfExists("airlineWithNA")
-        jdbcDDFManager.sql(AIRLINE_NA_CREATE)
+        jdbcDDFManager.create(AIRLINE_NA_CREATE)
         val filePath = getClass.getResource("/airlineWithNA.csv").getPath
-        jdbcDDFManager.sql("load '" + filePath + "' WITH NULL '' NO DEFAULTS into airlineWithNA")
+        jdbcDDFManager.load("load '" + filePath + "' WITH NULL '' NO DEFAULTS into airlineWithNA")
         ddf = jdbcDDFManager.getDDFByName("airlineWithNA")
     }
     ddf
@@ -81,9 +96,9 @@ trait Loader {
     } catch {
       case e: Exception =>
         dropTableIfExists("year_names")
-        jdbcDDFManager.sql(YEAR_NAMES_CREATE)
+        jdbcDDFManager.create(YEAR_NAMES_CREATE)
         val filePath = getClass.getResource("/year_names.csv").getPath
-        jdbcDDFManager.sql("load '" + filePath + "' into year_names")
+        jdbcDDFManager.load("load '" + filePath + "' into year_names")
         ddf = jdbcDDFManager.getDDFByName("year_names")
     }
     ddf
@@ -98,9 +113,9 @@ trait Loader {
     } catch {
       case e: Exception =>
         dropTableIfExists("mtcars")
-        jdbcDDFManager.sql(MT_CARS_CREATE)
+        jdbcDDFManager.create(MT_CARS_CREATE)
         val filePath = getClass.getResource("/mtcars").getPath
-        jdbcDDFManager.sql("load '" + filePath + "'  delimited by ' '  into mtcars")
+        jdbcDDFManager.load("load '" + filePath + "'  delimited by ' '  into mtcars")
         ddf = jdbcDDFManager.getDDFByName("mtcars")
     }
     ddf

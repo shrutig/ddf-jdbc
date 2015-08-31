@@ -1,13 +1,13 @@
 package io.ddf.jdbc.content
 
 import java.io.FileReader
+import java.sql.Connection
 import java.text.SimpleDateFormat
 import java.util
 import java.util.Date
 
 import com.google.common.collect.Lists
 import com.univocity.parsers.csv.{CsvParser, CsvParserSettings}
-import io.ddf.DDFManager
 import io.ddf.content.Schema.{Column, ColumnType}
 import io.ddf.content.{Schema, SqlResult}
 import org.apache.commons.io.IOUtils
@@ -24,32 +24,31 @@ object SqlCommand {
 
   private final val logger = LoggerFactory.getLogger(getClass)
 
-  def apply(db: String, schemaName: String, tableName: String, command: String, maxRows: Int, separator: String)(implicit catalog: Catalog) = {
+  def apply(connection: Connection, schemaName: String, tableName: String, command: String, maxRows: Int, separator: String)(implicit catalog: Catalog) = {
     val schema = new Schema(tableName, "")
-    val list = NamedDB(db) localTx { implicit session =>
-      catalog.setSchema(schemaName)
-      SQL(command).map { rs =>
-        val actualRS = rs.underlying
-        val md = actualRS.getMetaData
-        val colCount = md.getColumnCount
-        val row: Array[String] = new Array[String](colCount)
-        val columns: Array[Column] = new Array[Column](colCount)
-        var colIdx = 0
-        while (colIdx < colCount) {
-          //resultset in jdbc start at 1
-          val rsIdx = colIdx + 1
-          val obj = actualRS.getObject(rsIdx)
-          row(colIdx) = if (obj == null) null else obj.toString
-          val colName = md.getColumnName(rsIdx)
-          val colType = md.getColumnTypeName(rsIdx)
-          columns(colIdx) = new Column(colName, colType)
-          colIdx = colIdx + 1
-        }
-        schema.setColumns(columns.toList.asJava)
-        val rowStr = row.mkString(separator)
-        rowStr
-      }.list().apply
-    }
+    implicit val session = DB(connection).readOnlySession()
+    catalog.setSchema(connection, schemaName)
+    val list = SQL(command).map { rs =>
+      val actualRS = rs.underlying
+      val md = actualRS.getMetaData
+      val colCount = md.getColumnCount
+      val row: Array[String] = new Array[String](colCount)
+      val columns: Array[Column] = new Array[Column](colCount)
+      var colIdx = 0
+      while (colIdx < colCount) {
+        //resultset in jdbc start at 1
+        val rsIdx = colIdx + 1
+        val obj = actualRS.getObject(rsIdx)
+        row(colIdx) = if (obj == null) null else obj.toString
+        val colName = md.getColumnName(rsIdx)
+        val colType = md.getColumnTypeName(rsIdx)
+        columns(colIdx) = new Column(colName, colType)
+        colIdx = colIdx + 1
+      }
+      schema.setColumns(columns.toList.asJava)
+      val rowStr = row.mkString(separator)
+      rowStr
+    }.list().apply
     val subList = if (maxRows < list.size) list.take(maxRows) else list
     new SqlResult(schema, subList)
   }
@@ -57,34 +56,34 @@ object SqlCommand {
 
 object SqlArrayResultCommand {
 
-  def apply(db: String, schemaName: String, tableName: String, command: String)(implicit catalog: Catalog): SqlArrayResult = {
-    apply(db, schemaName, tableName, command, Integer.MAX_VALUE)
+  def apply(connection: Connection, schemaName: String, tableName: String, command: String)(implicit catalog: Catalog): SqlArrayResult = {
+    apply(connection, schemaName, tableName, command, Integer.MAX_VALUE)
   }
 
-  def apply(db: String, schemaName: String, tableName: String, command: String, maxRows: Int)(implicit catalog: Catalog): SqlArrayResult = {
+  def apply(connection: Connection, schemaName: String, tableName: String, command: String, maxRows: Int)(implicit catalog: Catalog): SqlArrayResult = {
     val schema = new Schema(tableName, "")
-    val list = NamedDB(db) localTx { implicit session =>
-      catalog.setSchema(schemaName)
-      SQL(command).map { rs =>
-        val actualRS = rs.underlying
-        val md = actualRS.getMetaData
-        val colCount = md.getColumnCount
-        val row: Array[Any] = new Array[Any](colCount)
-        val columns: Array[Column] = new Array[Column](colCount)
-        var colIdx = 0
-        while (colIdx < colCount) {
-          //resultset in jdbc start at 1
-          val rsIdx = colIdx + 1
-          row(colIdx) = actualRS.getObject(rsIdx)
-          val colName = md.getColumnName(rsIdx)
-          val colType = md.getColumnTypeName(rsIdx)
-          columns(colIdx) = new Column(colName, colType)
-          colIdx = colIdx + 1
-        }
-        schema.setColumns(columns.toList.asJava)
-        row
-      }.list().apply
-    }
+
+    implicit val session = DB(connection).readOnlySession()
+    catalog.setSchema(connection, schemaName)
+    val list = SQL(command).map { rs =>
+      val actualRS = rs.underlying
+      val md = actualRS.getMetaData
+      val colCount = md.getColumnCount
+      val row: Array[Any] = new Array[Any](colCount)
+      val columns: Array[Column] = new Array[Column](colCount)
+      var colIdx = 0
+      while (colIdx < colCount) {
+        //resultset in jdbc start at 1
+        val rsIdx = colIdx + 1
+        row(colIdx) = actualRS.getObject(rsIdx)
+        val colName = md.getColumnName(rsIdx)
+        val colType = md.getColumnTypeName(rsIdx)
+        columns(colIdx) = new Column(colName, colType)
+        colIdx = colIdx + 1
+      }
+      schema.setColumns(columns.toList.asJava)
+      row
+    }.list().apply
     val subList = if (maxRows < list.size) list.take(maxRows) else list
     new SqlArrayResult(schema, subList)
   }
@@ -92,16 +91,17 @@ object SqlArrayResultCommand {
 
 
 object DdlCommand {
-  def apply(db: String, schemaName: String, command: String)(implicit catalog: Catalog) = {
-    NamedDB(db) autoCommit { implicit session =>
-      catalog.setSchema(schemaName)
-      SQL(command).execute().apply()
+  def apply(connection: Connection, schemaName: String, command: String)(implicit catalog: Catalog) = {
+    val db = DB(connection)
+    db.autoClose(false)
+    db localTx { implicit session =>
+      SQL(command).executeUpdate().apply()
     }
   }
 }
 
 object SchemaToCreate {
-  def apply(db: String, schema: Schema) = {
+  def apply(schema: Schema) = {
     val command = "CREATE TABLE " + schema.getTableName + " (" + schema.getColumns.map { col =>
       val sqlType = col.getType match {
         case ColumnType.STRING => "VARCHAR"
@@ -118,18 +118,13 @@ object LoadCommand {
 
   class SerCsvParserSettings extends CsvParserSettings with Serializable
 
-  def apply(ddfManager: DDFManager, db: String, schemaName: String, command: String)(implicit catalog: Catalog): String = {
-    val l = Parsers.parseLoad(command)
-    apply(ddfManager, db, schemaName, l)
-  }
-
-  def apply(ddfManager: DDFManager, db: String, schemaName: String, l: Load)(implicit catalog: Catalog): String = {
+  def apply(connection: Connection, schemaName: String, schema: Schema, l: Load)(implicit catalog: Catalog): String = {
     val lines: util.List[Array[String]] = getLines(l)
-    val ddf = ddfManager.getDDFByName(l.tableName)
-    val schema = ddf.getSchema
-    insert(db, schemaName, schema, lines, l.useDefaults)
+    insert(connection, schemaName, schema, lines, l.useDefaults)
     l.tableName
   }
+
+  def parse(command: String) = Parsers.parseLoad(command)
 
   def getLines(l: Load): util.List[Array[String]] = {
     val parser: CsvParser = getParser(l)
@@ -169,12 +164,15 @@ object LoadCommand {
     parser
   }
 
-  def insert(db: String, schemaName: String, schema: Schema, lines: Seq[Array[String]], useDefaults: Boolean)(implicit catalog: Catalog): Seq[Int] = {
+  def insert(connection: Connection, schemaName: String, schema: Schema, lines: Seq[Array[String]], useDefaults: Boolean)(implicit catalog: Catalog): Seq[Int] = {
     val columns = schema.getColumns
     val colStr = columns.map(col => col.getName).mkString(",")
     val paramStr = columns.map(col => "?").mkString(",")
-    NamedDB(db) localTx { implicit session =>
-      catalog.setSchema(schemaName)
+    val db = DB(connection)
+    db.autoClose(false)
+    implicit val session = db autoCommitSession()
+    catalog.setSchema(connection, schemaName)
+    db localTx { implicit session =>
       val batchParams: Seq[Seq[Any]] = lines.map(line => parseRow(line, columns, useDefaults))
       val sql = "insert into " + schema.getTableName + " (" + colStr + ") values (" + paramStr + ") "
       SQL(sql).batch(batchParams: _*).apply()
@@ -216,8 +214,6 @@ object LoadCommand {
 
           case ColumnType.BIGINT =>
             row(idx) = Try(colValue.toLong).getOrElse(if (useDefaults) 0 else null)
-          case ColumnType.LONG =>
-            row(idx) = Try(colValue.toLong).getOrElse(if (useDefaults) 0 else null)
           case ColumnType.TIMESTAMP =>
             row(idx) = Try(dateFormat.parse(colValue)).getOrElse(new Date(0))
           case ColumnType.DATE =>
@@ -242,7 +238,7 @@ sealed trait Function
 object Parsers extends RegexParsers with JavaTokenParsers {
 
   def parseLoad(input: String): Load = parseAll(load, StringUtils.removeEnd(input, ";")) match {
-    case s: Success[Load] => s.get
+    case s: Success[_] => s.get.asInstanceOf[Load]
     case e: Error =>
       val msg = "Cannot parse [" + input + "] because " + e.msg
       throw new IllegalArgumentException(msg)
@@ -252,7 +248,7 @@ object Parsers extends RegexParsers with JavaTokenParsers {
   }
 
   def parseCreate(input: String): Create = parseAll(create, StringUtils.removeEnd(input, ";")) match {
-    case s: Success[Create] => s.get
+    case s: Success[_] => s.get.asInstanceOf[Create]
     case e: Error =>
       val msg = "Cannot parse [" + input + "] because " + e.msg
       throw new IllegalArgumentException(msg)

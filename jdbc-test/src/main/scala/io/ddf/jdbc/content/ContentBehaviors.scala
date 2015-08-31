@@ -48,7 +48,7 @@ trait ContentBehaviors extends BaseBehaviors {
 
   def ddfWithPersistenceHandler(implicit l: Loader): Unit = {
     it should "hold namespaces correctly" in {
-      val manager: DDFManager = DDFManager.get(l.engine)
+      val manager: DDFManager = DDFManager.get(l.engine,l.jdbcDDFManager.getDataSourceDescriptor)
       val ddf: DDF = manager.newDDF
 
       val namespaces = ddf.getPersistenceHandler.listNamespaces
@@ -62,7 +62,7 @@ trait ContentBehaviors extends BaseBehaviors {
     }
 
     it should "persist and unpersist a jdbc DDF" in {
-      val manager: DDFManager = DDFManager.get(l.engine)
+      val manager: DDFManager = DDFManager.get(l.engine,l.jdbcDDFManager.getDataSourceDescriptor)
       val ddf: DDF = manager.newDDF
       val uri: PersistenceUri = ddf.persist
       uri.getEngine should be(l.engine)
@@ -116,7 +116,7 @@ trait ContentBehaviors extends BaseBehaviors {
 
 
     it should "test get factors" in {
-      val ddf = manager.sql2ddf("select * from mtcars")
+      val ddf = manager.sql2ddf("select * from ddf://adatao/mtcars")
 
       val schemaHandler = ddf.getSchemaHandler
 
@@ -172,7 +172,7 @@ trait ContentBehaviors extends BaseBehaviors {
       assert(cols(5).getOptionalFactor.getLevelCounts.get("0") === 9.0)
       assert(cols(4).getOptionalFactor.getLevelCounts.get("3") === 1.0)
 
-      val ddf2 = manager.sql2ddf("select * from airlineWithNA")
+      val ddf2 = manager.sql2ddf("select * from ddf://adatao/airlineWithNA")
       //    ddf2.getRepresentationHandler.remove(classOf[RDD[_]], classOf[TablePartition])
 
       val schemaHandler2 = ddf2.getSchemaHandler

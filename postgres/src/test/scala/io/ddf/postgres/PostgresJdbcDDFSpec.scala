@@ -4,7 +4,7 @@ import io.ddf.DDFManager
 import io.ddf.jdbc.analytics.AnalyticsBehaviors
 import io.ddf.jdbc.content.ContentBehaviors
 import io.ddf.jdbc.etl.ETLBehaviors
-import io.ddf.jdbc.{JdbcDDFManager, Loader}
+import io.ddf.jdbc.{EngineDescriptor, JdbcDDFManager, Loader}
 import org.scalatest.FlatSpec
 
 class PostgresJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors {
@@ -33,7 +33,8 @@ class PostgresJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentB
 }
 
 object ManagerFactory {
-  val jdbcDDFManager = DDFManager.get("postgres").asInstanceOf[JdbcDDFManager]
+  val engineDescriptor = EngineDescriptor("postgres")
+  val jdbcDDFManager = DDFManager.get("postgres",engineDescriptor).asInstanceOf[JdbcDDFManager]
 }
 
 object PostgresLoader extends Loader {
@@ -42,7 +43,7 @@ object PostgresLoader extends Loader {
   override def jdbcDDFManager: JdbcDDFManager = ManagerFactory.jdbcDDFManager
 
   override def dropTableIfExists(tableName: String) = {
-    jdbcDDFManager.sql("drop table if exists " + tableName + " cascade")
+    jdbcDDFManager.drop("drop table if exists " + tableName + " cascade")
   }
 
   override def MT_CARS_CREATE = "CREATE TABLE mtcars (mpg decimal,cyl int, disp decimal, hp int, drat decimal, wt decimal, qsec decimal, vs int, am int, gear int, carb int)"

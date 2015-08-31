@@ -12,7 +12,7 @@ trait AnalyticsBehaviors extends BaseBehaviors {
   this: FlatSpec =>
 
   def ddfWithAggregationHandler(implicit l: Loader) = {
-    val ddf = l.loadAirlineDDF().sql2ddf("select year, month, dayofweek, deptime, arrtime,origin, distance, arrdelay, depdelay, carrierdelay, weatherdelay, nasdelay, securitydelay, lateaircraftdelay from airline")
+    val ddf = l.loadAirlineDDF().sql2ddf("select year, month, dayofweek, deptime, arrtime,origin, distance, arrdelay, depdelay, carrierdelay, weatherdelay, nasdelay, securitydelay, lateaircraftdelay from ddf://adatao/airline")
 
     it should "calculate simple aggregates" in {
       val res1 = ddf.aggregate("year, month, min(depdelay), max(arrdelay)")

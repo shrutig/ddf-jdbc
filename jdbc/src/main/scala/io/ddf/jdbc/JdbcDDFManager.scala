@@ -1,64 +1,84 @@
 package io.ddf.jdbc
 
 
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import java.sql.DriverManager
+import java.util.UUID
+
 import io.ddf.content.Schema
+import io.ddf.datasource.{DataSourceDescriptor, JDBCDataSourceCredentials}
+import io.ddf.exception.DDFException
 import io.ddf.jdbc.content._
+import io.ddf.jdbc.etl.SqlHandler
 import io.ddf.jdbc.utils.Utils
 import io.ddf.misc.Config
 import io.ddf.{DDF, DDFManager}
-import scalikejdbc.{ConnectionPool, DataSourceConnectionPool}
 
 
-class JdbcDDFManager extends DDFManager {
+class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName: String) extends DDFManager {
 
-  override def getEngine: String = "jdbc"
+  override def getEngine: String = engineName
 
   def catalog: Catalog = SimpleCatalog
 
-  val dataSource = initializeConnectionPool(getEngine)
+  val driverClassName = Config.getValue(getEngine, "jdbcDriverClass")
+  Class.forName(driverClassName)
+  val connection = initializeConnection(getEngine)
+  val baseSchema = Config.getValue(getEngine, "workspaceSchema")
+  setEngineName(engineName)
+  setDataSourceDescriptor(dataSourceDescriptor)
 
-  def defaultDataSourceName = "remote"
+  def isSinkAllowed = baseSchema != null
 
-  def baseSchema = Config.getValue(getEngine, "baseSchema")
-
-  ConnectionPool.add("remote", new DataSourceConnectionPool(dataSource))
-
-
-  def initializeConnectionPool(engine: String) = {
-    val jdbcUrl = Config.getValue(engine, "jdbcUrl")
-    val jdbcUser = Config.getValue(engine, "jdbcUser")
-    val jdbcPassword = Config.getValue(engine, "jdbcPassword")
-    val poolSizeStr = Config.getValue(engine, "jdbcPoolSize")
-    val driverClassName = Config.getValue(engine, "jdbcDriverClass")
-    val connectionTestQuery = Config.getValue(engine, "jdbcConnectionTestQuery")
-
-    val poolSize = if (poolSizeStr == null) 10 else poolSizeStr.toInt
-
-    val config = new HikariConfig()
-    if (driverClassName != null) config.setDriverClassName(driverClassName)
-    if (connectionTestQuery != null) config.setConnectionTestQuery(connectionTestQuery)
-    config.setJdbcUrl(jdbcUrl)
-    config.setUsername(jdbcUser)
-    config.setPassword(jdbcPassword)
-    config.setMaximumPoolSize(poolSize)
-    config.setCatalog(baseSchema)
-    new HikariDataSource(config)
+  def initializeConnection(engine: String) = {
+    val jdbcUrl = dataSourceDescriptor.getDataSourceUri.getUri.toString
+    val credentials = dataSourceDescriptor.getDataSourceCredentials.asInstanceOf[JDBCDataSourceCredentials]
+    val jdbcUser = credentials.getUsername
+    val jdbcPassword = credentials.getPassword
+    DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword)
   }
 
 
+  def drop(command: String) = {
+    checkSinkAllowed()
+    implicit val cat = catalog
+    DdlCommand(connection, baseSchema, command)
+  }
+
+  def create(command: String) = {
+    checkSinkAllowed()
+    val sqlHandler = this.getDummyDDF.getSqlHandler.asInstanceOf[SqlHandler]
+    checkSinkAllowed()
+    implicit val cat = catalog
+    sqlHandler.create2ddf(command, null)
+  }
+
+  def load(command: String) = {
+    checkSinkAllowed()
+    val l = LoadCommand.parse(command)
+    val ddf = getDDFByName(l.tableName)
+    val schema = ddf.getSchema
+    implicit val cat = catalog
+    LoadCommand(connection, baseSchema, schema, l)
+    ddf
+  }
+
   override def loadTable(fileURL: String, fieldSeparator: String): DDF = {
+    checkSinkAllowed()
     implicit val cat = catalog
     val tableName = getDummyDDF.getSchemaHandler.newTableName()
     val load = new Load(tableName, fieldSeparator.charAt(0), fileURL, null, null, true)
     val lines = LoadCommand.getLines(load, 5)
     import scala.collection.JavaConverters._
-    val colInfo = getColumnInfo(lines.asScala.toList, false, true)
+    val colInfo = getColumnInfo(lines.asScala.toList, hasHeader = false, doPreferDouble = true)
     val schema = new Schema(tableName, colInfo)
-    val createCommand = SchemaToCreate(defaultDataSourceName, schema)
-    val ddf = sql2ddf(createCommand)
-    LoadCommand(this, defaultDataSourceName, baseSchema, load)
+    val createCommand = SchemaToCreate(schema)
+    val ddf = create(createCommand)
+    LoadCommand(connection, baseSchema, schema, load)
     ddf
+  }
+
+  def checkSinkAllowed(): Unit = {
+    if (!isSinkAllowed) throw new DDFException("Cannot load table into database as workSpace is not configured")
   }
 
   def getColumnInfo(sampleData: List[Array[String]],
@@ -84,6 +104,23 @@ class JdbcDDFManager extends DDFManager {
     samples.zipWithIndex.map {
       case (col, i) => new Schema.Column(headers(i), Utils.determineType(col, doPreferDouble, false))
     }
+  }
+
+  override def getOrRestoreDDFUri(ddfURI: String): DDF = null
+
+  override def transfer(fromEngine: String, ddfuri: String): DDF = {
+    throw new DDFException("Load DDF from file is not supported!")
+  }
+
+  override def getOrRestoreDDF(uuid: UUID): DDF = null
+
+
+  def showTables(): java.util.List[String] = {
+    catalog.showTables(connection, null)
+  }
+
+  def getTableSchema(tableName: String) = {
+    catalog.getTableSchema(connection, null, tableName)
   }
 
 }

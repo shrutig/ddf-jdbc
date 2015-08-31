@@ -15,8 +15,8 @@ class JoinHandler(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with IHandle
   @throws(classOf[DDFException])
   override def join(anotherDDF: DDF, joinTypeParam: JoinType, byColumns: util.List[String], byLeftColumns: util.List[String], byRightColumns: util.List[String]): DDF = {
     val joinType = if (joinTypeParam == null) JoinType.INNER else joinTypeParam
-    val leftTableName: String = getDDF.getTableName
-    val rightTableName: String = anotherDDF.getTableName
+    val leftTableName: String = getDDF.getUri
+    val rightTableName: String = anotherDDF.getUri
     val rightColumnNameSet: util.HashSet[String] = new util.HashSet[String]()
     rightColumnNameSet.addAll(anotherDDF.getSchema.getColumns.map(_.getName))
 
@@ -57,7 +57,7 @@ class JoinHandler(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with IHandle
   }
 
   override def merge(anotherDDF: DDF): DDF = {
-    val sql = String.format("SELECT * from %s UNION ALL SELECT * from %s", ddf.getTableName, anotherDDF.getTableName)
+    val sql = String.format("SELECT * from %s UNION ALL SELECT * from %s", ddf.getUri, anotherDDF.getTableName)
     ddf.sql2ddf(sql)
   }
 }

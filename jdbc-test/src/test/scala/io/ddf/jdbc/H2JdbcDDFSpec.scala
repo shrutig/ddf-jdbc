@@ -31,7 +31,8 @@ class H2JdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavio
 }
 
 object ManagerFactory {
-  val jdbcDDFManager = DDFManager.get("jdbc").asInstanceOf[JdbcDDFManager]
+  val engineDescriptor = EngineDescriptor("jdbc")
+  val jdbcDDFManager = DDFManager.get("jdbc", engineDescriptor).asInstanceOf[JdbcDDFManager]
 }
 
 object H2Loader extends Loader {

@@ -8,7 +8,7 @@ object Common {
 
   lazy val rootProjectName = "ddf-jdbc"
 
-  lazy val ddfVersion = "1.2.0"
+  lazy val ddfVersion = "1.4.0-SNAPSHOT"
 
   lazy val theScalaVersion = "2.10.4"
 
@@ -75,5 +75,6 @@ object Common {
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1)
   )
 
+  scalaVersion in ThisBuild := "2.10.X"
 }
 
