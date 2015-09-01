@@ -277,7 +277,7 @@ trait ETLBehaviors extends BaseBehaviors {
       val list = collection.asJava
       println(list)
       rep.schema.getNumColumns should be(2)
-      list.head(0).toString should startWith("200")
+      list.head(0).toString should startWith("20")
     }
 
     it should "run a sql command with where" in {
