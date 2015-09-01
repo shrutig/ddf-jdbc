@@ -46,12 +46,12 @@ lazy val jdbc = project.in(file("jdbc")).settings(commonSettings: _*).settings(
 )
 
 lazy val jdbcExamples = project.in(file("jdbc-examples")).dependsOn(jdbc).settings(commonSettings: _*).settings(
-  name := "jdbc-examples",
+  name := "ddf-jdbc-examples",
   pomExtra := submodulePom
 )
 
 lazy val jdbcTest = project.in(file("jdbc-test")).dependsOn(jdbc).settings(commonSettings: _*).settings(
-  name := "jdbc-test",
+  name := "ddf-jdbc-test",
   pomExtra := submodulePom,
   libraryDependencies ++= Seq(
     "org.scalatest" %% "scalatest" % "3.0.0-M7",
@@ -60,15 +60,15 @@ lazy val jdbcTest = project.in(file("jdbc-test")).dependsOn(jdbc).settings(commo
 )
 
 lazy val postgres = project.in(file("postgres")).dependsOn(jdbc,jdbcTest % "test->test").settings(commonSettings: _*).settings(
-  name := "postgres",
+  name := "ddf-jdbc-postgres",
   pomExtra := submodulePom,
   libraryDependencies ++= Seq(
     "postgresql" % "postgresql" % "9.1-901-1.jdbc4"
   )
 )
 
-lazy val aws = project.in(file("aws")).dependsOn(jdbc,jdbcTest,postgres % "test->test").settings(commonSettings: _*).settings(
-  name := "aws",
+lazy val aws = project.in(file("aws")).dependsOn(jdbc,postgres,jdbcTest % "test->test").settings(commonSettings: _*).settings(
+  name := "ddf-jdbc-aws",
   pomExtra := submodulePom,
   libraryDependencies ++= Seq(
     "com.amazonaws" % "aws-java-sdk" % "1.10.8"
