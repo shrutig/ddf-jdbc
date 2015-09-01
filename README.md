@@ -59,3 +59,10 @@ Customizing the JDBC DDF Implementation for your database
 5. A template spec is [here] (https://github.com/tuplejump/ddf-jdbc/blob/master/postgres/src/test/scala/io/ddf/postgres/PostgresJdbcDDFSpec.scala)
 6. Change build.sbt to include your implementation optionally, if you are using the same repo or a fork.
 
+Using one of the JDBC Implementations
+=====================================
+1. Change the ddf-conf/ddf.ini file in the repo and go to the relevant section as per the implementation. Change the jdbcUrl, jdbcUser and jdbcPassword. 
+2. Use DDFManager.get("engine",dataSourceDescriptor) to obtain an instance of a JDBCDDFManager.
+3. Optionally set the "workspaceSchema" to a schema/namespace in your database to add write access. This will enable write operations on the database and also enable DDFManager.sql2ddf calls. Warning!! The sql2ddf calls create views on the workspaceSchema.
+
+
