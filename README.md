@@ -41,11 +41,14 @@ $ cd ddf-jdbc
 $ sbt publish-local
 ```
 
+This will publish four modules viz. ddf-jdbc,ddf-jdbc-test,ddf-jdbc-postgres,ddf-jdbc-aws
 
+One published it may be used in any project via Maven or SBT as dependencies.
 
 JDBC test suite
 ===============
 A test suite has been developed to test any DDF implementation based on the DDF-JDBC project. 
+This test suite has different behaviours. Particular behaviors can be added like the example [here] (https://github.com/tuplejump/ddf-jdbc/blob/master/postgres/src/test/scala/io/ddf/postgres/PostgresJdbcDDFSpec.scala)
 
 Customizing the JDBC DDF Implementation for your database
 =========================================================
@@ -54,5 +57,5 @@ Customizing the JDBC DDF Implementation for your database
 3. Sub class any Handlers optionally.
 4. Make a scalatest spec in the test source folder. This spec will extend various Behaviors used for testing.
 5. A template spec is [here] (https://github.com/tuplejump/ddf-jdbc/blob/master/postgres/src/test/scala/io/ddf/postgres/PostgresJdbcDDFSpec.scala)
-
+6. Change build.sbt to include your implementation optionally, if you are using the same repo or a fork.
 
