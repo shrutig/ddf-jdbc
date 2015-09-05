@@ -11,8 +11,7 @@ $ cd DDF
 
 No changes are required when installing DDF using maven.
 
-Before installing DDF using SBT, add a new line to commonSettings in project/RootBuild.scala, (don't miss adding the comma at the end of the previous line in case it is the last setting)
-
+Before installing DDF using SBT, add a new line to commonSettings in project/RootBuild.scala, (don't miss adding the comma at the end of the previous line in case it is the last setting, in commonSetting)
 ```
   ),
 

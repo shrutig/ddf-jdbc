@@ -46,7 +46,8 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
       else {
         this.mLog.info("replace: " + command)
         statement = tableNameReplacer.run(statement)
-        if (tableNameReplacer.containsLocalTable || tableNameReplacer.uri2TableObj.size == 1) {
+        if (tableNameReplacer.containsLocalTable || tableNameReplacer
+          .mUri2TblObj.size == 1) {
           this.mLog.info("New stat is " + statement.toString)
           return this.sql2ddf(statement.toString, schema, dataSource, dataFormat)
         }

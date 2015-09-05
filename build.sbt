@@ -41,7 +41,7 @@ lazy val jdbc = project.in(file("jdbc")).settings(commonSettings: _*).settings(
     "com.zaxxer" % "HikariCP-java6" % "2.3.9",
     "org.scalikejdbc" %% "scalikejdbc" % "2.2.7",
     "com.univocity" % "univocity-parsers" % "1.5.5",
-    "com.clearspring.analytics" % "stream" % "2.4.0" exclude("asm", "asm")
+    "com.clearspring.analytics" % "stream" % "2.7.0" exclude("asm", "asm")
   )
 )
 
