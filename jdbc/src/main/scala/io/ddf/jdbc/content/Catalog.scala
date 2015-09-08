@@ -11,9 +11,17 @@ trait Catalog {
 
   def getTableSchema(connection: Connection, schemaName: String, tableName: String): Schema
 
+  def listColumnsForTable(connection: Connection,
+                          schemaName: String,
+                          tableName: String): util.List[Column]
+
   def setSchema(connection: Connection, schemaName: String)
 
   def showTables(connection: Connection, schemaName: String): util.List[String]
+
+  def showDatabases(connection: Connection) : util.List[String]
+
+  def setDatabase(connection: Connection, database : String)
 }
 
 object SimpleCatalog extends Catalog {
@@ -27,7 +35,8 @@ object SimpleCatalog extends Catalog {
   }
 
   @throws(classOf[SQLException])
-  def listColumnsForTable(connection: Connection, schemaName: String, tableName: String): util.List[Column] = {
+  override  def listColumnsForTable(connection: Connection, schemaName: String,
+    tableName: String): util.List[Column] = {
     val columns: util.List[Column] = new util.ArrayList[Column]
     val metadata: DatabaseMetaData = connection.getMetaData
     val resultSet: ResultSet = metadata.getColumns(null, schemaName, tableName.toUpperCase, null)
@@ -55,5 +64,18 @@ object SimpleCatalog extends Catalog {
       tables.add(rs.getString("TABLE_NAME"))
     }
     tables
+  }
+
+  override def showDatabases(connection: Connection): util.List[String] = {
+    val catalogs = connection.getMetaData.getCatalogs
+    val databases: util.List[String] = new util.ArrayList[String]
+    while (catalogs.next()) {
+      databases.add(catalogs.getString("TABLE_CAT"))
+    }
+    databases
+  }
+
+  override def setDatabase(connection: Connection, database: String): Unit = {
+    connection.setCatalog(database)
   }
 }

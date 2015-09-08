@@ -1,9 +1,10 @@
 package io.ddf.postgres
 
-import java.sql.Connection
+import java.sql.{ResultSet, DatabaseMetaData, Connection}
 import java.util
 
 import io.ddf.content.Schema
+import io.ddf.content.Schema.Column
 import io.ddf.content.Schema.Column
 import io.ddf.datasource.DataSourceDescriptor
 import io.ddf.jdbc.JdbcDDFManager
@@ -59,5 +60,36 @@ object PostgresCatalog extends Catalog {
     val sqlResult = SqlArrayResultCommand(connection, "information_schema", "tables", sql)
     sqlResult.result.foreach(row => tables.add(row(0).toString))
     tables
+  }
+
+  override def showDatabases(connection: Connection): util.List[String] = {
+    val sql = "SELECT datname FROM pg_database WHERE datistemplate = false;";
+    val databases: util.List[String] = new util.ArrayList[String]
+    implicit  val catalog = this
+    val sqlResult = SqlArrayResultCommand(connection, "pg_database",
+      "tables", sql)
+    sqlResult.result.foreach(row => databases.add(row(0).toString))
+    databases
+  }
+
+  override def setDatabase(connection: Connection, database: String): Unit = {
+    connection.setCatalog(database)
+  }
+
+  override  def listColumnsForTable(connection: Connection, schemaName: String,
+                                    tableName: String): util.List[Column] = {
+    val columns: util.List[Column] = new util.ArrayList[Column]
+    val metadata: DatabaseMetaData = connection.getMetaData
+    val resultSet: ResultSet = metadata.getColumns(null, schemaName, tableName.toUpperCase, null)
+    while (resultSet.next) {
+      val columnName = resultSet.getString(4)
+      var columnTypeStr = resultSet.getString(6)
+      if ("VARCHAR".equalsIgnoreCase(columnTypeStr) || "VARCHAR2".equalsIgnoreCase(columnTypeStr)) {
+        columnTypeStr = "STRING"
+      }
+      val column = new Column(columnName, columnTypeStr)
+      columns.add(column)
+    }
+    columns
   }
 }

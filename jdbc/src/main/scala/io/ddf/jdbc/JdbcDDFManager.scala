@@ -1,10 +1,12 @@
 package io.ddf.jdbc
 
 
-import java.sql.DriverManager
+import java.sql.{Connection, DriverManager}
+import java.util
 import java.util.UUID
 
 import io.ddf.content.Schema
+import io.ddf.content.Schema.Column
 import io.ddf.datasource.{DataSourceDescriptor, JDBCDataSourceCredentials}
 import io.ddf.exception.DDFException
 import io.ddf.jdbc.content._
@@ -121,6 +123,19 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName: Str
 
   def getTableSchema(tableName: String) = {
     catalog.getTableSchema(connection, null, tableName)
+  }
+
+  def showDatabases(): java.util.List[String] = {
+    catalog.showDatabases(connection)
+  }
+
+  def setDatabase(database: String) : Unit = {
+    catalog.setDatabase(connection, database)
+  }
+
+  def listColumnsForTable(schemaName: String,
+                          tableName: String): util.List[Column] = {
+    this.catalog.listColumnsForTable(connection, schemaName, tableName);
   }
 
 }
