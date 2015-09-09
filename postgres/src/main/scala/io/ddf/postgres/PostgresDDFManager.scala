@@ -16,10 +16,18 @@ class PostgresDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName:
 
   override def catalog = PostgresCatalog
 
+  catalog.curSchema = this.baseSchema
+
+  override def setSchema(schemaName: String): Unit = {
+    this.sql("set search_path to " + schemaName)
+  }
+
 }
 
 
 object PostgresCatalog extends Catalog {
+
+  var curSchema : String = "public"
 
   override def getViewSchema(connection: Connection, schemaName: String, name: String): Schema = getTableSchema(connection, schemaName, name)
 
@@ -53,13 +61,13 @@ object PostgresCatalog extends Catalog {
     new Schema(name, columns)
   }
 
-  override def setSchema(connection: Connection, schemaName: String): Unit = {
-    implicit val session = DB(connection).readOnlySession()
-    SQL("set search_path to " + schemaName).executeUpdate()
-  }
 
   override def showTables(connection: Connection, schemaName: String): util.List[String] = {
-    val sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = '" + schemaName.toLowerCase + "'"
+      var schema: String = schemaName
+      if (schema == null) {
+        schema = curSchema
+      }
+      val sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = '" + schema.toLowerCase + "'"
     val tables: util.List[String] = new util.ArrayList[String]
     implicit val catalog = this
     val sqlResult = SqlArrayResultCommand(connection, "information_schema", "tables", sql)
