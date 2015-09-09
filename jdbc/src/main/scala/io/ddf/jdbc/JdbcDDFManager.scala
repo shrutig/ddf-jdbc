@@ -117,8 +117,8 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName: Str
   override def getOrRestoreDDF(uuid: UUID): DDF = null
 
 
-  def showTables(): java.util.List[String] = {
-    catalog.showTables(connection, null)
+  def showTables(schemaName: String): java.util.List[String] = {
+    catalog.showTables(connection, schemaName)
   }
 
   def getTableSchema(tableName: String) = {
@@ -136,6 +136,14 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName: Str
   def listColumnsForTable(schemaName: String,
                           tableName: String): util.List[Column] = {
     this.catalog.listColumnsForTable(connection, schemaName, tableName);
+  }
+
+  def showSchemas(): util.List[String] = {
+    this.catalog.showSchemas(connection)
+  }
+
+  def setSchema(schemaName: String): Unit = {
+    this.catalog.setSchema(connection, schemaName)
   }
 
 }

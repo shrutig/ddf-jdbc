@@ -92,4 +92,14 @@ object PostgresCatalog extends Catalog {
     }
     columns
   }
+
+  override def showSchemas(connection: Connection): util.List[String] = {
+    val rs = connection.getMetaData.getSchemas()
+    val schemas: util.List[String] = new util.ArrayList[String]()
+    while (rs.next()) {
+      schemas.add(rs.getString("TABLE_SCHEMA"))
+    }
+    schemas
+  }
+
 }

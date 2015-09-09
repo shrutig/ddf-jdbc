@@ -19,9 +19,11 @@ trait Catalog {
 
   def showTables(connection: Connection, schemaName: String): util.List[String]
 
-  def showDatabases(connection: Connection) : util.List[String]
+  def showDatabases(connection: Connection): util.List[String]
 
   def setDatabase(connection: Connection, database : String)
+
+  def showSchemas(connection: Connection): util.List[String]
 }
 
 object SimpleCatalog extends Catalog {
@@ -39,7 +41,7 @@ object SimpleCatalog extends Catalog {
     tableName: String): util.List[Column] = {
     val columns: util.List[Column] = new util.ArrayList[Column]
     val metadata: DatabaseMetaData = connection.getMetaData
-    val resultSet: ResultSet = metadata.getColumns(null, schemaName, tableName.toUpperCase, null)
+    val resultSet: ResultSet = metadata.getColumns(null, schemaName, tableName, null)
     while (resultSet.next) {
       val columnName = resultSet.getString(4)
       var columnTypeStr = resultSet.getString(6)
@@ -53,7 +55,7 @@ object SimpleCatalog extends Catalog {
   }
 
   override def setSchema(connection: Connection, schemaName: String): Unit = {
-    //do nothing
+    connection.setSchema(schemaName)
   }
 
   override def showTables(connection: Connection, schemaName: String): util.List[String] = {
@@ -77,5 +79,14 @@ object SimpleCatalog extends Catalog {
 
   override def setDatabase(connection: Connection, database: String): Unit = {
     connection.setCatalog(database)
+  }
+
+  override def showSchemas(connection: Connection): util.List[String] = {
+    val rs = connection.getMetaData.getSchemas()
+    val schemas: util.List[String] = new util.ArrayList[String]()
+    while (rs.next()) {
+      schemas.add(rs.getString("TABLE_SCHEM"))
+    }
+    schemas
   }
 }
