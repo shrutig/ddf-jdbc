@@ -118,6 +118,9 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName: Str
 
 
   def showTables(schemaName: String): java.util.List[String] = {
+    if (schemaName == null) {
+      schemaName = baseSchema.asInstanceOf[String]
+    }
     catalog.showTables(connection, schemaName)
   }
 

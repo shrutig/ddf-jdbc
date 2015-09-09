@@ -42,7 +42,7 @@ object SqlCommand {
         row(colIdx) = if (obj == null) null else obj.toString
         val colName = md.getColumnName(rsIdx)
         val colType = md.getColumnTypeName(rsIdx)
-        columns(colIdx) = new Column(colName, colType)
+        columns(colIdx) = new Column(colName, catalog.getColumnType(colType))
         colIdx = colIdx + 1
       }
       schema.setColumns(columns.toList.asJava)
@@ -78,7 +78,7 @@ object SqlArrayResultCommand {
         row(colIdx) = actualRS.getObject(rsIdx)
         val colName = md.getColumnName(rsIdx)
         val colType = md.getColumnTypeName(rsIdx)
-        columns(colIdx) = new Column(colName, colType)
+        columns(colIdx) = new Column(colName, catalog.getColumnType(colType))
         colIdx = colIdx + 1
       }
       schema.setColumns(columns.toList.asJava)

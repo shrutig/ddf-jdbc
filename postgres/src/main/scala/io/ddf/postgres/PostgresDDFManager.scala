@@ -59,7 +59,7 @@ object PostgresCatalog extends Catalog {
   }
 
   override def showTables(connection: Connection, schemaName: String): util.List[String] = {
-    val sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = '" + schemaName.toLowerCase
+    val sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = '" + schemaName.toLowerCase + "'"
     val tables: util.List[String] = new util.ArrayList[String]
     implicit val catalog = this
     val sqlResult = SqlArrayResultCommand(connection, "information_schema", "tables", sql)
@@ -100,7 +100,7 @@ object PostgresCatalog extends Catalog {
     val rs = connection.getMetaData.getSchemas()
     val schemas: util.List[String] = new util.ArrayList[String]()
     while (rs.next()) {
-      schemas.add(rs.getString("TABLE_SCHEMA"))
+      schemas.add(rs.getString("TABLE_SCHEM"))
     }
     schemas
   }
@@ -109,11 +109,13 @@ object PostgresCatalog extends Catalog {
   override def getColumnType(typeStr: String) : ColumnType = {
     typeStr match {
       case "int4" => ColumnType.INT
+      case "integer" => ColumnType.INT
       case "int8"=> ColumnType.BIGINT
       case "float4"=> ColumnType.FLOAT
       case "float8" => ColumnType.DOUBLE
       case "varchar"=> ColumnType.STRING
       case "varchar2"=> ColumnType.STRING
+      case "name"=> ColumnType.STRING
       case "text"=> ColumnType.STRING
       case "date"=> ColumnType.DATE
       case "bool"=> ColumnType.BOOLEAN
