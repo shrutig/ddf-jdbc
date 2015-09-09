@@ -1,11 +1,11 @@
 package io.ddf.postgres
 
-import java.sql.{ResultSet, DatabaseMetaData, Connection}
+import java.sql.{Connection, DatabaseMetaData, ResultSet}
 import java.util
 
 import io.ddf.content.Schema
 import io.ddf.content.Schema.Column
-import io.ddf.content.Schema.Column
+import io.ddf.content.Schema.ColumnType
 import io.ddf.datasource.DataSourceDescriptor
 import io.ddf.jdbc.JdbcDDFManager
 import io.ddf.jdbc.content.{Catalog, SqlArrayResultCommand}
@@ -15,10 +15,12 @@ class PostgresDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName:
   override def getEngine = "postgres"
 
   override def catalog = PostgresCatalog
+
 }
 
 
 object PostgresCatalog extends Catalog {
+
   override def getViewSchema(connection: Connection, schemaName: String, name: String): Schema = getTableSchema(connection, schemaName, name)
 
   override def getTableSchema(connection: Connection, schemaName: String, name: String): Schema = {
@@ -29,6 +31,8 @@ object PostgresCatalog extends Catalog {
     sqlResult.result.foreach { row =>
       val columnName = row(0).toString
       var columnTypeStr = row(1).toString
+
+      /*
       if (columnTypeStr.equalsIgnoreCase("character varying") || "text".equalsIgnoreCase(columnTypeStr) || "VARCHAR".equalsIgnoreCase(columnTypeStr) || "VARCHAR2".equalsIgnoreCase(columnTypeStr)) {
         columnTypeStr = "STRING"
       }
@@ -41,8 +45,9 @@ object PostgresCatalog extends Catalog {
       if ("bigserial".equalsIgnoreCase(columnTypeStr) || "bigint".equalsIgnoreCase(columnTypeStr)) {
         columnTypeStr = "BIGINT"
       }
-
-      val column = new Column(columnName, columnTypeStr)
+      */
+      this.mLog.info("list columns: " + columnName + " " + columnTypeStr)
+      val column = new Column(columnName, this.getColumnType(columnTypeStr))
       columns.add(column)
     }
     new Schema(name, columns)
@@ -80,14 +85,12 @@ object PostgresCatalog extends Catalog {
                                     tableName: String): util.List[Column] = {
     val columns: util.List[Column] = new util.ArrayList[Column]
     val metadata: DatabaseMetaData = connection.getMetaData
-    val resultSet: ResultSet = metadata.getColumns(null, schemaName, tableName.toUpperCase, null)
+    val resultSet: ResultSet = metadata.getColumns(null, schemaName, tableName, null)
     while (resultSet.next) {
       val columnName = resultSet.getString(4)
       var columnTypeStr = resultSet.getString(6)
-      if ("VARCHAR".equalsIgnoreCase(columnTypeStr) || "VARCHAR2".equalsIgnoreCase(columnTypeStr)) {
-        columnTypeStr = "STRING"
-      }
-      val column = new Column(columnName, columnTypeStr)
+      this.mLog.info("list columns: " + columnName + " " + columnTypeStr);
+      val column = new Column(columnName, getColumnType(columnTypeStr))
       columns.add(column)
     }
     columns
@@ -100,6 +103,21 @@ object PostgresCatalog extends Catalog {
       schemas.add(rs.getString("TABLE_SCHEMA"))
     }
     schemas
+  }
+
+
+  override def getColumnType(typeStr: String) : ColumnType = {
+    typeStr match {
+      case "int4" => ColumnType.INT
+      case "int8"=> ColumnType.BIGINT
+      case "float4"=> ColumnType.FLOAT
+      case "float8" => ColumnType.DOUBLE
+      case "varchar"=> ColumnType.STRING
+      case "varchar2"=> ColumnType.STRING
+      case "text"=> ColumnType.STRING
+      case "date"=> ColumnType.DATE
+      case "bool"=> ColumnType.BOOLEAN
+    }
   }
 
 }

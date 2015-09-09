@@ -3,10 +3,14 @@ package io.ddf.jdbc.content
 import java.sql.{Connection, DatabaseMetaData, ResultSet, SQLException}
 import java.util
 
+import io.ddf.DDFManager
 import io.ddf.content.Schema
 import io.ddf.content.Schema.Column
+import io.ddf.content.Schema.ColumnType
+import io.ddf.misc.ALoggable
 
-trait Catalog {
+trait Catalog extends ALoggable {
+
   def getViewSchema(connection: Connection, schemaName: String, tableName: String): Schema
 
   def getTableSchema(connection: Connection, schemaName: String, tableName: String): Schema
@@ -24,6 +28,8 @@ trait Catalog {
   def setDatabase(connection: Connection, database : String)
 
   def showSchemas(connection: Connection): util.List[String]
+
+  def getColumnType(typeStr: String) : ColumnType
 }
 
 object SimpleCatalog extends Catalog {
@@ -88,5 +94,9 @@ object SimpleCatalog extends Catalog {
       schemas.add(rs.getString("TABLE_SCHEM"))
     }
     schemas
+  }
+
+  override def getColumnType(typeStr: String): ColumnType = {
+    ColumnType.get(typeStr)
   }
 }
