@@ -113,6 +113,11 @@ object PostgresCatalog extends Catalog {
     schemas
   }
 
+  override def setSchema(connection: Connection, schemaName: String): Unit = {
+      implicit val session = DB(connection).autoCommitSession()
+      SQL("set search_path to " + schemaName).execute()
+  }
+
 
   override def getColumnType(typeStr: String) : ColumnType = {
     typeStr match {
