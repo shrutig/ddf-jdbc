@@ -1,5 +1,7 @@
 package io.ddf.jdbc.content
 
+import io.ddf.jdbc.utils
+
 import java.sql.{Connection, DatabaseMetaData, ResultSet, SQLException}
 import java.util
 
@@ -7,6 +9,7 @@ import io.ddf.DDFManager
 import io.ddf.content.Schema
 import io.ddf.content.Schema.Column
 import io.ddf.content.Schema.ColumnType
+import io.ddf.jdbc.utils.Utils
 import io.ddf.misc.ALoggable
 
 trait Catalog extends ALoggable {
@@ -30,9 +33,15 @@ trait Catalog extends ALoggable {
   def showSchemas(connection: Connection): util.List[String]
 
   def getColumnType(typeStr: String) : ColumnType
+
+  def log(str: String): Unit
 }
 
 object SimpleCatalog extends Catalog {
+  def log(str: String): Unit = {
+    this.mLog.info(str)
+  }
+
   def getViewSchema(connection: Connection, schemaName: String, viewName: String): Schema = {
     getTableSchema(connection, schemaName, viewName)
   }
@@ -50,11 +59,10 @@ object SimpleCatalog extends Catalog {
     val resultSet: ResultSet = metadata.getColumns(null, schemaName, tableName, null)
     while (resultSet.next) {
       val columnName = resultSet.getString(4)
-      var columnTypeStr = resultSet.getString(6)
-      if ("VARCHAR".equalsIgnoreCase(columnTypeStr) || "VARCHAR2".equalsIgnoreCase(columnTypeStr)) {
-        columnTypeStr = "STRING"
-      }
-      val column = new Column(columnName, columnTypeStr)
+      var columnType = resultSet.getInt(5)
+
+
+      val column = new Column(columnName, Utils.getDDFType(columnType))
       columns.add(column)
     }
     columns
@@ -97,6 +105,34 @@ object SimpleCatalog extends Catalog {
   }
 
   override def getColumnType(typeStr: String): ColumnType = {
-    ColumnType.get(typeStr)
+    typeStr match  {
+      case "array"=>ColumnType.ARRAY
+      case "int"=>ColumnType.BIGINT
+      case "binary"=>ColumnType.BINARY
+      case "bool"=>ColumnType.BOOLEAN
+      case "boolean"=>ColumnType.BOOLEAN
+      case "bit"=>ColumnType.BOOLEAN
+      case "char"=>ColumnType.STRING
+      case "date"=>ColumnType.DATE
+      case "decimal"=>ColumnType.DECIMAL
+      case "double"=>ColumnType.DOUBLE
+      case "float"=>ColumnType.FLOAT
+      case "integer"=>ColumnType.INT
+      case "longvarchar"=>ColumnType.STRING
+      case "numeric"=>ColumnType.DECIMAL
+      case "nvarchar"=>ColumnType.STRING
+      case "smallint"=>ColumnType.INT
+      case "timestamp"=>ColumnType.TIMESTAMP
+      case "datetime"=>ColumnType.TIMESTAMP
+      case "tinyint"=>ColumnType.INT
+      case "varchar"=>ColumnType.STRING
+      case "varbinary"=>ColumnType.BINARY
+      case "string" => ColumnType.STRING
+      case whatever =>
+        this.mLog.info("try to find type: " + whatever)
+        null
+      //TODO: complete for other types
+
+    }
   }
 }

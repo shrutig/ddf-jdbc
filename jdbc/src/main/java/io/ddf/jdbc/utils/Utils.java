@@ -1,5 +1,9 @@
 package io.ddf.jdbc.utils;
 
+import io.ddf.content.Schema;
+import io.ddf.exception.DDFException;
+
+import java.sql.Types;
 
 public class Utils {
 
@@ -71,4 +75,38 @@ public class Utils {
     return result;
   }
 
+  /**
+   *
+   * @return DDF Column type
+   */
+  public static Schema.ColumnType getDDFType(Integer colType) throws DDFException {
+    switch(colType) {
+      case Types.ARRAY: return Schema.ColumnType.ARRAY;
+      case Types.BIGINT:  return Schema.ColumnType.BIGINT;
+      case Types.BINARY: return Schema.ColumnType.BINARY;
+      case Types.BIT: return Schema.ColumnType.BOOLEAN; //TODO: verify
+      case Types.BLOB: return Schema.ColumnType.BLOB;
+      case Types.BOOLEAN: return Schema.ColumnType.BOOLEAN;
+      case Types.CHAR: return Schema.ColumnType.STRING;
+      case Types.CLOB:
+      case Types.DATALINK:
+      case Types.DATE: return Schema.ColumnType.DATE;
+      case Types.DECIMAL: return Schema.ColumnType.DECIMAL;
+      case Types.DISTINCT:
+      case Types.DOUBLE: return Schema.ColumnType.DOUBLE;
+      case Types.FLOAT: return Schema.ColumnType.FLOAT;
+      case Types.INTEGER: return Schema.ColumnType.INT;
+      case Types.LONGVARCHAR: return Schema.ColumnType.STRING; //TODO: verify
+      case Types.NUMERIC: return Schema.ColumnType.DECIMAL;
+      case Types.NVARCHAR: return Schema.ColumnType.STRING; //TODO: verify
+      case Types.REAL: return Schema.ColumnType.FLOAT;
+      case Types.SMALLINT: return Schema.ColumnType.INT;
+      case Types.TIMESTAMP: return Schema.ColumnType.TIMESTAMP;
+      case Types.TINYINT: return Schema.ColumnType.INT;
+      case Types.VARCHAR: return Schema.ColumnType.STRING; //TODO: verify
+      case Types.VARBINARY: return Schema.ColumnType.BINARY;
+      default: throw new DDFException("Type not support " + colType);
+        //TODO: complete for other types
+    }
+  }
 }

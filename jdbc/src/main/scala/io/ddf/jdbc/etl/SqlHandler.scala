@@ -133,6 +133,7 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
   }
 
   override def sql(command: String, maxRows: Integer, dataSource: DataSourceDescriptor): SqlResult = {
+    this.ddfManager.log("run sql in ddf-jdbc, command is : " + command)
     val maxRowsInt: Int = if (maxRows == null) Integer.MAX_VALUE else maxRows
     if (StringUtils.startsWithIgnoreCase(command.trim, "DROP")) {
       DdlCommand(connection, baseSchema, command)
@@ -149,7 +150,8 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
       new SqlResult(null, Collections.singletonList("0"))
     } else {
       val tableName = ddf.getSchemaHandler.newTableName()
-      SqlCommand(connection, baseSchema, tableName, command, maxRowsInt, "\t")
+      SqlCommand(connection, baseSchema, tableName, command, maxRowsInt,
+        "\t", this.ddfManager.getEngine)
     }
   }
 

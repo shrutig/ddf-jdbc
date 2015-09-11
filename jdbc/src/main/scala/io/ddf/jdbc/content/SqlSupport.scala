@@ -14,20 +14,24 @@ import org.apache.commons.io.IOUtils
 import org.apache.commons.lang.StringUtils
 import org.slf4j.LoggerFactory
 import scalikejdbc._
+import io.ddf.jdbc.utils.Utils
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.util.parsing.combinator.{JavaTokenParsers, RegexParsers}
 import scala.util.{Failure, Success, Try}
+import scala.xml.Utility
 
 object SqlCommand {
 
   private final val logger = LoggerFactory.getLogger(getClass)
 
-  def apply(connection: Connection, schemaName: String, tableName: String, command: String, maxRows: Int, separator: String)(implicit catalog: Catalog) = {
+  def apply(connection: Connection, schemaName: String, tableName: String, command: String, maxRows: Int, separator: String, engineType: String)(implicit catalog: Catalog) = {
     val schema = new Schema(tableName, "")
     implicit val session = DB(connection).readOnlySession()
-    catalog.setSchema(connection, schemaName)
+    if (!engineType.equals("sfdc")) {
+      catalog.setSchema(connection, schemaName)
+    }
     val list = SQL(command).map { rs =>
       val actualRS = rs.underlying
       val md = actualRS.getMetaData
@@ -41,8 +45,8 @@ object SqlCommand {
         val obj = actualRS.getObject(rsIdx)
         row(colIdx) = if (obj == null) null else obj.toString
         val colName = md.getColumnName(rsIdx)
-        val colType = md.getColumnTypeName(rsIdx)
-        columns(colIdx) = new Column(colName, catalog.getColumnType(colType))
+        val colType = md.getColumnType(rsIdx)
+        columns(colIdx) = new Column(colName, Utils.getDDFType(colType))
         colIdx = colIdx + 1
       }
       schema.setColumns(columns.toList.asJava)
@@ -77,8 +81,8 @@ object SqlArrayResultCommand {
         val rsIdx = colIdx + 1
         row(colIdx) = actualRS.getObject(rsIdx)
         val colName = md.getColumnName(rsIdx)
-        val colType = md.getColumnTypeName(rsIdx)
-        columns(colIdx) = new Column(colName, catalog.getColumnType(colType))
+        val colType = md.getColumnType(rsIdx)
+        columns(colIdx) = new Column(colName, Utils.getDDFType(colType))
         colIdx = colIdx + 1
       }
       schema.setColumns(columns.toList.asJava)

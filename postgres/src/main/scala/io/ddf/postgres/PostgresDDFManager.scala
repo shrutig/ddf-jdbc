@@ -9,6 +9,7 @@ import io.ddf.content.Schema.ColumnType
 import io.ddf.datasource.DataSourceDescriptor
 import io.ddf.jdbc.JdbcDDFManager
 import io.ddf.jdbc.content.{Catalog, SqlArrayResultCommand}
+import io.ddf.jdbc.utils.Utils
 import scalikejdbc.{DB, SQL}
 
 class PostgresDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName: String) extends JdbcDDFManager(dataSourceDescriptor, engineName) {
@@ -28,6 +29,10 @@ class PostgresDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName:
 object PostgresCatalog extends Catalog {
 
   var curSchema : String = "public"
+
+  def log(str: String): Unit = {
+    this.mLog.info(str)
+  }
 
   override def getViewSchema(connection: Connection, schemaName: String, name: String): Schema = getTableSchema(connection, schemaName, name)
 
@@ -96,9 +101,9 @@ object PostgresCatalog extends Catalog {
     val resultSet: ResultSet = metadata.getColumns(null, schemaName, tableName, null)
     while (resultSet.next) {
       val columnName = resultSet.getString(4)
-      var columnTypeStr = resultSet.getString(6)
-      this.mLog.info("list columns: " + columnName + " " + columnTypeStr);
-      val column = new Column(columnName, getColumnType(columnTypeStr))
+      var columnType = resultSet.getInt(5)
+      this.mLog.info("list columns: " + columnName + " " + columnType);
+      val column = new Column(columnName, Utils.getDDFType(columnType))
       columns.add(column)
     }
     columns
