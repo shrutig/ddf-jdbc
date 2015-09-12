@@ -1,17 +1,14 @@
 import sbt._
 import sbt.Keys._
-
+import sbt.Classpaths.publishTask
 
 object Common {
-
   lazy val rootOrganization = "io"
-
-  lazy val rootProjectName = "ddf-jdbc"
-
+  lazy val rootProjectName = "ddf"
   lazy val ddfVersion = "1.5.0-SNAPSHOT"
-
   lazy val theScalaVersion = "2.10.4"
-
+  lazy val MavenCompile = config("m2r") extend(Compile)
+  lazy val publishLocalBoth = TaskKey[Unit]("publish-local", "publish local for m2 and ivy")
   lazy val submodulePom = (
     <!--
       **************************************************************************************************
@@ -62,7 +59,6 @@ object Common {
         </plugins>
       </build>
     )
-
   lazy val commonSettings = Seq(
     organization := "io.ddf",
     version := ddfVersion,
@@ -72,9 +68,14 @@ object Common {
     fork in Test := true,
     parallelExecution in ThisBuild := false,
     javaOptions in Test ++= Seq("-Xmx2g"),
-    concurrentRestrictions in Global += Tags.limit(Tags.Test, 1)
+    concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
+    otherResolvers := Seq(Resolver.file("dotM2", file(Path.userHome + "/.m2/repository"))),
+    publishLocalConfiguration in MavenCompile <<= (packagedArtifacts, deliverLocal, ivyLoggingLevel) map {
+      (arts, _, level) => new PublishConfiguration(None, "dotM2", arts, Seq(), level)
+    },
+    publishMavenStyle in MavenCompile := true,
+    publishLocal in MavenCompile <<= publishTask(publishLocalConfiguration in MavenCompile, deliverLocal),
+    publishLocalBoth <<= Seq(publishLocal in MavenCompile, publishLocal).dependOn
   )
-
   scalaVersion in ThisBuild := "2.10.X"
 }
-

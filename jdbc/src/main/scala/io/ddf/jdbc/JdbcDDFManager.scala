@@ -27,6 +27,8 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
   Class.forName(driverClassName)
   var connection = initializeConnection(getEngine)
   val baseSchema = Config.getValue(getEngine, "workspaceSchema")
+  val canCreateView = Config.getValue(getEngine, "canCreateView")
+    .equalsIgnoreCase("yes")
   setEngineType(engineType)
   setDataSourceDescriptor(dataSourceDescriptor)
 
@@ -45,6 +47,10 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
       connection = this.initializeConnection(getEngine)
     }
     connection
+  }
+
+  def getCanCreateView(): Boolean = {
+    canCreateView
   }
 
   def drop(command: String) = {

@@ -98,12 +98,16 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
     } else if (StringUtils.startsWithIgnoreCase(command.trim, "CREATE")) {
       create2ddf(command, schema)
     } else {
-      val viewName = genTableName(8)
-      //View will allow select commands
-      DdlCommand(connection, baseSchema, "CREATE VIEW " + viewName + " AS (" + command + ")")
-      val viewSchema = if (schema == null) catalog.getViewSchema(connection, baseSchema, viewName) else schema
-      val viewRep = TableNameRepresentation(viewName, viewSchema)
-      ddf.getManager.newDDF(this.getManager, viewRep, Array(Representations.VIEW), this.getManager.getEngineName, ddf.getNamespace, viewName, viewSchema)
+      if (this.ddfManager.getCanCreateView()) {
+        val viewName = genTableName(8)
+        //View will allow select commands
+        DdlCommand(connection, baseSchema, "CREATE VIEW " + viewName + " AS (" + command + ")")
+        val viewSchema = if (schema == null) catalog.getViewSchema(connection, baseSchema, viewName) else schema
+        val viewRep = TableNameRepresentation(viewName, viewSchema)
+        ddf.getManager.newDDF(this.getManager, viewRep, Array(Representations.VIEW), this.getManager.getEngineName, ddf.getNamespace, viewName, viewSchema)
+      } else {
+
+      }
     }
   }
 
