@@ -24,73 +24,6 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
   implicit val catalog = ddfManager.catalog
   val connection = ddfManager.connection
 
-  @throws[DDFException]
-  override def sql2ddfHandle(command: String, schema: Schema, dataSource: DataSourceDescriptor, dataFormat: DataFormat, tableNameReplacer: TableNameReplacer): DDF = {
-    ddfManager.checkSinkAllowed()
-    if (dataSource != null) {
-      val sqlDataSourceDescriptor: SQLDataSourceDescriptor = dataSource.asInstanceOf[SQLDataSourceDescriptor]
-      if (sqlDataSourceDescriptor == null) {
-        throw new DDFException("ERROR: Handling datasource")
-      }
-      if (dataSource.isInstanceOf[JDBCDataSourceDescriptor] || sqlDataSourceDescriptor.getDataSource != null) {
-        return this.sql2ddf(command, schema, dataSource, dataFormat)
-      }
-    }
-    val parserManager: CCJSqlParserManager = new CCJSqlParserManager
-    val reader: StringReader = new StringReader(command)
-    try {
-      var statement: Statement = parserManager.parse(reader)
-      if (!(statement.isInstanceOf[Select])) {
-        throw new DDFException("ERROR: Only select is allowed in this sql2ddf")
-      }
-      else {
-        this.mLog.info("replace: " + command)
-        statement = tableNameReplacer.run(statement)
-        if (tableNameReplacer.containsLocalTable || tableNameReplacer
-          .mUri2TblObj.size == 1) {
-          this.mLog.info("New stat is " + statement.toString)
-          return this.sql2ddf(statement.toString, schema, dataSource, dataFormat)
-        }
-        else {
-          val selectString: String = statement.toString
-          val ddf: DDF = this.getManager.transferByTable(tableNameReplacer.fromEngineName, selectString)
-          return ddf
-        }
-      }
-    }
-    catch {
-      case e: JSQLParserException => {
-        throw new DDFException(" SQL Syntax ERROR: " + e.getCause.getMessage.split("\n")(0))
-      }
-      case e: DDFException => {
-        throw e
-      }
-      case e: Exception => {
-        throw new DDFException(e)
-      }
-    }
-  }
-
-  override def sql2ddf(command: String): DDF = {
-    this.sql2ddf(command, null, null, null)
-  }
-
-  override def sql2ddf(command: String, schema: Schema): DDF = {
-    this.sql2ddf(command, schema, null, null)
-  }
-
-  override def sql2ddf(command: String, dataFormat: DataFormat): DDF = {
-    this.sql2ddf(command, null, null, null)
-  }
-
-  override def sql2ddf(command: String, schema: Schema, dataSource: DataSourceDescriptor): DDF = {
-    this.sql2ddf(command, schema, dataSource, null)
-  }
-
-  override def sql2ddf(command: String, schema: Schema, dataFormat: DataFormat): DDF = {
-    this.sql2ddf(command, schema, null, null)
-  }
-
   override def sql2ddf(command: String, schema: Schema, dataSource: DataSourceDescriptor, dataFormat: DataFormat): DDF = {
     ddfManager.checkSinkAllowed()
     if (StringUtils.startsWithIgnoreCase(command.trim, "LOAD")) {
@@ -133,7 +66,7 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
   }
 
   override def sql(command: String, maxRows: Integer): SqlResult = {
-    sql(command, Integer.MAX_VALUE, null)
+    sql(command, maxRows, null)
   }
 
   override def sql(command: String, maxRows: Integer, dataSource: DataSourceDescriptor): SqlResult = {
