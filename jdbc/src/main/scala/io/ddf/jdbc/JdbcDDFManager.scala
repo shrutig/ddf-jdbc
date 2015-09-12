@@ -16,17 +16,18 @@ import io.ddf.misc.Config
 import io.ddf.{DDF, DDFManager}
 
 
-class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName: String) extends DDFManager {
+class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
+                     engineType: String) extends DDFManager {
 
-  override def getEngine: String = engineName
+  override def getEngine: String = engineType
 
   def catalog: Catalog = SimpleCatalog
 
   val driverClassName = Config.getValue(getEngine, "jdbcDriverClass")
   Class.forName(driverClassName)
-  val connection = initializeConnection(getEngine)
+  var connection = initializeConnection(getEngine)
   val baseSchema = Config.getValue(getEngine, "workspaceSchema")
-  setEngineName(engineName)
+  setEngineType(engineType)
   setDataSourceDescriptor(dataSourceDescriptor)
 
   def isSinkAllowed = baseSchema != null
@@ -39,11 +40,17 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName: Str
     DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword)
   }
 
+  def getConnection(): Connection = {
+    if (connection != null && !connection.isValid(10)) {
+      connection = this.initializeConnection(getEngine)
+    }
+    connection
+  }
 
   def drop(command: String) = {
     checkSinkAllowed()
     implicit val cat = catalog
-    DdlCommand(connection, baseSchema, command)
+    DdlCommand(getConnection(), baseSchema, command)
   }
 
   def create(command: String) = {
@@ -60,7 +67,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName: Str
     val ddf = getDDFByName(l.tableName)
     val schema = ddf.getSchema
     implicit val cat = catalog
-    LoadCommand(connection, baseSchema, schema, l)
+    LoadCommand(getConnection(), baseSchema, schema, l)
     ddf
   }
 
@@ -75,7 +82,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName: Str
     val schema = new Schema(tableName, colInfo)
     val createCommand = SchemaToCreate(schema)
     val ddf = create(createCommand)
-    LoadCommand(connection, baseSchema, schema, load)
+    LoadCommand(getConnection(), baseSchema, schema, load)
     ddf
   }
 
@@ -118,32 +125,35 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName: Str
 
 
   def showTables(schemaName: String): java.util.List[String] = {
-    catalog.showTables(connection, schemaName)
+    catalog.showTables(getConnection(), schemaName)
   }
 
   def getTableSchema(tableName: String) = {
-    catalog.getTableSchema(connection, null, tableName)
+    catalog.getTableSchema(getConnection(), null, tableName)
   }
 
   def showDatabases(): java.util.List[String] = {
-    catalog.showDatabases(connection)
+    catalog.showDatabases(getConnection())
   }
 
   def setDatabase(database: String) : Unit = {
-    catalog.setDatabase(connection, database)
+    catalog.setDatabase(getConnection(), database)
   }
 
   def listColumnsForTable(schemaName: String,
                           tableName: String): util.List[Column] = {
-    this.catalog.listColumnsForTable(connection, schemaName, tableName);
+    this.catalog.listColumnsForTable(getConnection(), schemaName, tableName);
   }
 
   def showSchemas(): util.List[String] = {
-    this.catalog.showSchemas(connection)
+    this.catalog.showSchemas(getConnection())
   }
 
   def setSchema(schemaName: String): Unit = {
-    this.catalog.setSchema(connection, schemaName)
+    this.catalog.setSchema(getConnection(), schemaName)
   }
 
+  def disconnect() = {
+    connection.close()
+  }
 }
