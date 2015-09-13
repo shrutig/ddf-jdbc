@@ -106,6 +106,10 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
         val viewRep = TableNameRepresentation(viewName, viewSchema)
         ddf.getManager.newDDF(this.getManager, viewRep, Array(Representations.VIEW), this.getManager.getEngineName, ddf.getNamespace, viewName, viewSchema)
       } else {
+        //print out some error
+        //TODO log this properly
+        print("Error: can't created view")
+        return null
 
       }
     }
