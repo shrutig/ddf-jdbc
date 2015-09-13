@@ -61,7 +61,6 @@ object SimpleCatalog extends Catalog {
       val columnName = resultSet.getString(4)
       var columnType = resultSet.getInt(5)
 
-
       val column = new Column(columnName, Utils.getDDFType(columnType))
       columns.add(column)
     }
