@@ -44,8 +44,8 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
       sqlCommand.add(String.format(SUMMARY_FUNCTIONS, column.getName, column.getName, column.getName, column.getName, column.getName, column.getName, column.getName))
     }
     var sql: String = StringUtils.join(sqlCommand, ", ")
-    val tableName = this.getDDF.getTableName
-    sql = String.format("select %s from %s", sql, tableName)
+    val tableName = "(" + this.getDDF.getTableName + ") tmp"
+    sql = String.format("select %s from %s", sql,  tableName )
     val result = SqlArrayResultCommand(ddfManager.connection, ddfManager.baseSchema, tableName, sql).result.get(0)
     var i: Int = 0
     numericColumns.foreach { column =>
@@ -95,7 +95,7 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
     val categoricalColumns: util.List[Schema.Column] = this.getCategoricalColumns
     val simpleSummaries: util.List[SimpleSummary] = new util.ArrayList[SimpleSummary]
     categoricalColumns.foreach { column =>
-      val sqlCmd: String = String.format("select distinct(%s) from %s where %s is not null", column.getName, this.getDDF.getTableName, column.getName)
+      val sqlCmd: String = String.format("select distinct(%s) from %s where %s is not null", column.getName, "(" + this.getDDF.getTableName + ") tmp", column.getName)
       val values: util.List[String] = ddf.getSqlHandler.sql(sqlCmd).getRows
       val summary: CategoricalSimpleSummary = new CategoricalSimpleSummary
       summary.setValues(values)
@@ -108,7 +108,7 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
       sqlCommand.add(String.format("min(%s), max(%s)", column.getName, column.getName))
     }
     var sql: String = StringUtils.join(sqlCommand, ", ")
-    val tableName = this.getDDF.getTableName
+    val tableName = "(" + this.getDDF.getTableName + ") tmp"
     sql = String.format("select %s from %s", sql, tableName)
     val result = SqlArrayResultCommand(ddfManager.connection, ddfManager.baseSchema, tableName, sql).result.get(0)
     var i: Int = 0
