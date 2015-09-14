@@ -52,6 +52,7 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
       create2ddf(command, schema)
     } else {
       if (this.ddfManager.getCanCreateView()) {
+        this.getManager.log(">>> Creating view in database")
         val viewName = genTableName(8)
         //View will allow select commands
         DdlCommand(connection, baseSchema, "CREATE VIEW " + viewName + " AS (" + command + ")")
@@ -60,6 +61,7 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
         // TODO(TJ): This function implementation is wrong.
         ddf.getManager.newDDF(this.getManager, viewRep, Array(Representations.VIEW), this.getManager.getEngineName, ddf.getNamespace, viewName, viewSchema)
       } else {
+        this.getManager.log(">>> Creating view in pe/ddf")
         val schema = new Schema(command,
           null.asInstanceOf[java.util.List[Schema.Column]])
         val newDDF = ddf.getManager.newDDF(this.getManager, // the ddfmanager
@@ -70,6 +72,16 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
                                           ddf.getNamespace,
                                           null,
                                           schema)
+        if (newDDF == null) {
+          this.getManager.log(">>> ERROR: NewDDF is null in sql2ddf")
+        } else {
+          this.getManager.log(">>> NewDDF sucessfully in sql2ddf")
+          if (newDDF.getUUID == null) {
+            this.getManager.log(">>> ERROR: uuid is null of ddf")
+          } else {
+            this.getManager.log(">>> NewDDF UUID ok in sql2ddf")
+          }
+        }
         // Indicate that this ddf is a view, this information will be handled
         // in TableNameReplacer
         newDDF.setIsDDFView(true)
