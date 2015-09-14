@@ -24,6 +24,26 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
   implicit val catalog = ddfManager.catalog
   val connection = ddfManager.connection
 
+  override def sql2ddf(command: String): DDF = {
+    this.sql2ddf(command, null, null, null)
+  }
+
+  override def sql2ddf(command: String, schema: Schema): DDF = {
+    this.sql2ddf(command, schema, null, null)
+  }
+
+  override def sql2ddf(command: String, dataFormat: DataFormat): DDF = {
+    this.sql2ddf(command, null, null, null)
+  }
+
+  override def sql2ddf(command: String, schema: Schema, dataSource: DataSourceDescriptor): DDF = {
+    this.sql2ddf(command, schema, dataSource, null)
+  }
+
+  override def sql2ddf(command: String, schema: Schema, dataFormat: DataFormat): DDF = {
+    this.sql2ddf(command, schema, null, null)
+  }
+
   override def sql2ddf(command: String, schema: Schema, dataSource: DataSourceDescriptor, dataFormat: DataFormat): DDF = {
     ddfManager.checkSinkAllowed()
     if (StringUtils.startsWithIgnoreCase(command.trim, "LOAD")) {
