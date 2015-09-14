@@ -62,8 +62,8 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
         ddf.getManager.newDDF(this.getManager, viewRep, Array(Representations.VIEW), this.getManager.getEngineName, ddf.getNamespace, viewName, viewSchema)
       } else {
         this.getManager.log(">>> Creating view in pe/ddf")
-        val schema = new Schema(command,
-          null.asInstanceOf[java.util.List[Schema.Column]])
+        val sqlRet = this.sql("select * from (" + command + ") tmp limit 1");
+        val schema = sqlRet.getSchema
         val newDDF = ddf.getManager.newDDF(this.getManager, // the ddfmanager
                                           "this is a view", // the content
                                           // content class
