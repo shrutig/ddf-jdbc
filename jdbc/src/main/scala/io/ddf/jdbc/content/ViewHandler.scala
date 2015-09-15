@@ -32,6 +32,19 @@ class ViewHandler(ddf: DDF) extends io.ddf.content.ViewHandler(ddf) {
     newddf
   }
 
+  override def getRandomSampleByNum(numSamples: Int, withReplaement: Boolean,
+                                    seed: Int) : DDF = {
+    if (numSamples > MAX_SAMPLE_SIZE) {
+      throw new IllegalArgumentException("Number of samples is currently " +
+        "limited to " + MAX_SAMPLE_SIZE)
+    } else {
+      val sqlcmd = "SELECT * FROM {1} ORDER BY random() LIMIT " + numSamples
+      val ddf = this.getManager.sql2ddf(sqlcmd, new SQLDataSourceDescriptor
+      (sqlcmd, null, null, null, this.getDDF().getUUID().toString()))
+      ddf
+    }
+  }
+
   override def getRandomSample(numSamples: Int, withReplacement: Boolean, seed: Int): java.util.List[Array[Object]] = {
     if (numSamples > MAX_SAMPLE_SIZE) {
       throw new IllegalArgumentException("Number of samples is currently " +
