@@ -14,7 +14,7 @@ import io.ddf.jdbc.etl.SqlHandler
 import io.ddf.jdbc.utils.Utils
 import io.ddf.misc.Config
 import io.ddf.{DDF, DDFManager}
-
+import io.ddf.DDFManager.EngineType
 
 class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
                      engineType: String) extends DDFManager {
@@ -29,7 +29,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
   val baseSchema = Config.getValue(getEngine, "workspaceSchema")
   val canCreateView = Config.getValue(getEngine, "canCreateView")
     .equalsIgnoreCase("yes")
-  setEngineType(engineType)
+  setEngineType(EngineType.fromString(engineType))
   setDataSourceDescriptor(dataSourceDescriptor)
 
   def isSinkAllowed = baseSchema != null
