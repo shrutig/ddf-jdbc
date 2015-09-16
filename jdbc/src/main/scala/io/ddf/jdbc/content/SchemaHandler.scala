@@ -43,7 +43,36 @@ class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
       }
     }
     var listLevelCounts: JMap[Integer, JMap[String, Integer]] = null
-    val repHandler: IHandleRepresentations = this.getDDF.getRepresentationHandler
+
+    //loop through all factors and compute factor
+
+    val table_name = this.getDDF.getTableName
+    for (col <- this.getColumns) {
+      if (col.getColumnClass eq Schema.ColumnClass.FACTOR) {
+
+        val command = "select " + col.getName() + ", count(" + col.getName() + ") from " + table_name + " group by " + col.getName()
+        print(command)
+
+        var sqlResult = this.getDDF.sql(command,"" )
+        //JMap[String, Integer]
+        var result = sqlResult.getRows()
+        val levelCounts: java.util.Map[String, Integer] = new java.util.HashMap[String,Integer]()
+        for (item <- result) {
+          print(">>>item=")
+          println(item)
+          levelCounts.put(item, 1)
+        }
+
+        if (levelCounts != null) {
+          val factor: Factor[_] = col.getOptionalFactor
+          val levels: util.List[String] = new util.ArrayList[String](levelCounts.keySet)
+          factor.setLevelCounts(levelCounts)
+          factor.setLevels(levels, false)
+        }
+      }
+    }
+
+    /*val repHandler: IHandleRepresentations = this.getDDF.getRepresentationHandler
     if (columnIndexes.size > 0) {
       val sqlResult = this.getDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult]
       listLevelCounts = GetMultiFactor.getFactorCounts(sqlResult.result, columnIndexes, columnTypes, classOf[Array[AnyRef]])
@@ -61,7 +90,7 @@ class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
           factor.setLevels(levels, false)
         }
       }
-    }
+    }*/
   }
 }
 
