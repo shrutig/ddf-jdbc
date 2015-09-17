@@ -56,7 +56,17 @@ class ViewHandler(ddf: DDF) extends io.ddf.content.ViewHandler(ddf) {
       try {
         val resultDDF: DDF = this.getManager.sql2ddf(sqlCmd, new SQLDataSourceDescriptor(sqlCmd, null, null, null, this.getDDF.getUUID.toString))
         // resultDDF
-        null.asInstanceOf[java.util.List[Array[Object]]]
+        val lstRows = resultDDF.getViewHandler.head(numSamples)
+        //parse lstString to List[Array[Object]]
+        val data = new java.util.ArrayList[Array[Object]]()
+        var currentRow = Array[Object]()
+        for (row <- lstRows) {
+          currentRow = row.split("\t").asInstanceOf[Array[Object]]
+          data.add(currentRow)
+        }
+        data
+
+        //null.asInstanceOf[java.util.List[Array[Object]]]
       }
       catch {
         case e: Exception => {
