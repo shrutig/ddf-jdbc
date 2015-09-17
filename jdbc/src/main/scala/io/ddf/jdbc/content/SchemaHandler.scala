@@ -47,11 +47,11 @@ class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
     //loop through all factors and compute factor
 
     //(select * from hung_test) tmp
-    val table_name = this.getDDF.getTableName + ") tmp"
+    val table_name = s"${this.getDDF.getTableName} ) tmp"
     for (col <- this.getColumns) {
       if (col.getColumnClass eq Schema.ColumnClass.FACTOR) {
 
-        val command = "select " + col.getName() + ", count(" + col.getName() + ") from (" + table_name + " group by " + col.getName()
+        val command = s"select ${col.getName()}, count(${col.getName()}) from ($table_name group by ${col.getName()}"
 
         var sqlResult = this.getManager.sql(command,"" )
         //JMap[String, Integer]
@@ -61,7 +61,8 @@ class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
           if(item.split("\t").length > 1)
             levelCounts.put(item.split("\t")(0), Integer.parseInt(item.split("\t")(1)))
           else //todo log this properly
-            print(item)
+            this.mLog.debug("exception parsing item")
+            this.mLog.debug(item)
         }
 
         if (levelCounts != null) {
