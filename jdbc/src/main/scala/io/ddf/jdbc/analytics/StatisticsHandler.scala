@@ -64,10 +64,10 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
     val summaryArray = ArrayBuffer[Summary]()
     this.getDDF.getSchemaHandler.getColumns.map {
       column => if(column.isNumeric) {
-       val summary = summaries.find(sum => sum.colName == column.getName).get
-       summaryArray.append(summary)
+        val summary = summaries.find(sum => sum.colName == column.getName).get
+        summaryArray.append(summary)
       } else {
-       val summary = new Summary()
+        val summary = new Summary()
         summaryArray.append(summary)
       }
     }
