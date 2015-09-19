@@ -13,6 +13,7 @@ import io.ddf.jdbc.content.{Representations, SqlArrayResult, SqlArrayResultComma
 import org.apache.commons.lang.StringUtils
 
 import scala.collection.JavaConversions._
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
 
 class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
@@ -37,7 +38,7 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
 
 
   override def getSummaryImpl: Array[Summary] = {
-    val summaries: util.List[Summary] = new util.ArrayList[Summary]
+    val summaries: util.List[ExtSummary] = new util.ArrayList[ExtSummary]
     val numericColumns: util.List[Schema.Column] = this.getNumericColumns
     val sqlCommand: util.List[String] = new util.ArrayList[String]
     numericColumns.foreach { column =>
@@ -56,15 +57,26 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
       val naCount = if (result(i + 4) == null) -1 else result(i + 4).toString.toLong
       val min = if (result(i + 5) == null) Double.NaN else result(i + 5).toString.toDouble
       val max = if (result(i + 6) == null) Double.NaN else result(i + 6).toString.toDouble
-      val summary: Summary = new ExtSummary(count, sum, mean, variance, naCount, min, max)
+      val summary: ExtSummary = new ExtSummary(column.getName, count, sum, mean, variance, naCount, min, max)
       summaries.add(summary)
       i = i + 7
     }
-    summaries.toArray(new Array[Summary](summaries.size))
+    val summaryArray = ArrayBuffer[Summary]()
+    this.getDDF.getSchemaHandler.getColumns.map {
+      column => if(column.isNumeric) {
+        val summary = summaries.find(sum => sum.colName == column.getName).get
+        summaryArray.append(summary)
+      } else {
+        val summary = new Summary()
+        summaryArray.append(summary)
+      }
+    }
+    //summaries.toArray(new Array[Summary](summaries.size))
+    summaryArray.toArray
   }
 
 
-  class ExtSummary(_count: Long, _sum: Double, _mean: Double, _variance: Double, _naCount: Long,
+  class ExtSummary(val colName: String, _count: Long, _sum: Double, _mean: Double, _variance: Double, _naCount: Long,
                    _min: Double, _max: Double) extends Summary(_count, _mean, 0, _naCount, _min, _max) {
     override def stdev() = {
       Math.sqrt(_variance)
