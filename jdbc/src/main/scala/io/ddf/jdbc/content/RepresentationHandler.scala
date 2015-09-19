@@ -37,6 +37,5 @@ object Representations {
       new Representation(new SqlArrayResult(view.schema, sqlArrayResult.result), SQL_ARRAY_RESULT)
     }
   }
-
 }
 
