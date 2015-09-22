@@ -1,6 +1,7 @@
 package io.ddf.jdbc
 
 import io.ddf.DDFManager
+import io.ddf.DDFManager.EngineType
 import io.ddf.jdbc.analytics.AnalyticsBehaviors
 import io.ddf.jdbc.content.ContentBehaviors
 import io.ddf.jdbc.etl.ETLBehaviors
@@ -31,12 +32,12 @@ class H2JdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavio
 }
 
 object ManagerFactory {
-  val engineDescriptor = EngineDescriptor("jdbc")
-  val jdbcDDFManager = DDFManager.get("jdbc", engineDescriptor).asInstanceOf[JdbcDDFManager]
+  val engineDescriptor = EngineDescriptor(EngineType.JDBC.toString)
+  val jdbcDDFManager = DDFManager.get(EngineType.JDBC, engineDescriptor).asInstanceOf[JdbcDDFManager]
 }
 
 object H2Loader extends Loader {
-  override def engine: String = "jdbc"
+  override def engine: EngineType = EngineType.JDBC
 
   override def jdbcDDFManager: JdbcDDFManager = ManagerFactory.jdbcDDFManager
 }

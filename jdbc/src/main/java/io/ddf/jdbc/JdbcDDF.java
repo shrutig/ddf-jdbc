@@ -11,9 +11,9 @@ import java.util.List;
 
 public class JdbcDDF extends DDF {
 
-  public JdbcDDF(DDFManager manager, Object data, Class<?>[] typeSpecs, String engineName, String namespace,
+  public JdbcDDF(DDFManager manager, Object data, Class<?>[] typeSpecs, String namespace,
       String name, Schema schema) throws DDFException {
-    super(manager, data, typeSpecs, engineName, namespace, name, schema);
+    super(manager, data, typeSpecs, namespace, name, schema);
   }
 
   @Override public DDF copy() throws DDFException {
