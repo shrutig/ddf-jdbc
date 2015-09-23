@@ -6,6 +6,7 @@ import io.ddf.jdbc.content.ContentBehaviors
 import io.ddf.jdbc.etl.ETLBehaviors
 import io.ddf.jdbc.{EngineDescriptor, JdbcDDFManager, Loader}
 import org.scalatest.FlatSpec
+import io.ddf.DDFManager.EngineType
 
 class PostgresJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors {
   implicit val loader = PostgresLoader
@@ -34,11 +35,11 @@ class PostgresJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentB
 
 object ManagerFactory {
   val engineDescriptor = EngineDescriptor("postgres")
-  val jdbcDDFManager = DDFManager.get("postgres",engineDescriptor).asInstanceOf[JdbcDDFManager]
+  val jdbcDDFManager = DDFManager.get(EngineType.POSTGRES, engineDescriptor).asInstanceOf[JdbcDDFManager]
 }
 
 object PostgresLoader extends Loader {
-  override def engine: String = "postgres"
+  override def engine: EngineType = EngineType.POSTGRES
 
   override def jdbcDDFManager: JdbcDDFManager = ManagerFactory.jdbcDDFManager
 

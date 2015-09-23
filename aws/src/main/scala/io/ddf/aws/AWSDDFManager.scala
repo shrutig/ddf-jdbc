@@ -2,7 +2,7 @@ package io.ddf.aws
 
 import io.ddf.datasource.DataSourceDescriptor
 import io.ddf.postgres.PostgresDDFManager
-
-class AWSDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName: String) extends PostgresDDFManager(dataSourceDescriptor, engineName) {
-  override def getEngine = "aws"
+import io.ddf.DDFManager.EngineType
+class AWSDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineType: EngineType) extends PostgresDDFManager(dataSourceDescriptor, engineType) {
+  override def getEngine = engineType.name()
 }

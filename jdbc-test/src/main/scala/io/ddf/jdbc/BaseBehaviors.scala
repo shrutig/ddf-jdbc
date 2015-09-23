@@ -4,6 +4,7 @@ import io.ddf.DDF
 import io.ddf.datasource.{DataSourceURI, JDBCDataSourceCredentials, JDBCDataSourceDescriptor}
 import io.ddf.misc.Config
 import org.scalatest.Matchers
+import io.ddf.DDFManager.EngineType
 
 trait BaseBehaviors extends Matchers
 
@@ -22,7 +23,7 @@ object EngineDescriptor {
 trait Loader {
 
 
-  def engine: String
+  def engine: EngineType
 
   def jdbcDDFManager: JdbcDDFManager
 

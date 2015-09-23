@@ -7,13 +7,14 @@ import io.ddf.content.Schema
 import io.ddf.content.Schema.Column
 import io.ddf.content.Schema.ColumnType
 import io.ddf.datasource.DataSourceDescriptor
+import io.ddf.DDFManager.EngineType
 import io.ddf.jdbc.JdbcDDFManager
 import io.ddf.jdbc.content.{Catalog, SqlArrayResultCommand}
 import io.ddf.jdbc.utils.Utils
 import scalikejdbc.{DB, SQL}
 
-class PostgresDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineName: String) extends JdbcDDFManager(dataSourceDescriptor, engineName) {
-  override def getEngine = "postgres"
+class PostgresDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineType: EngineType) extends JdbcDDFManager(dataSourceDescriptor, engineType) {
+  override def getEngine = engineType.name()
 
   override def catalog = PostgresCatalog
 
@@ -45,20 +46,6 @@ object PostgresCatalog extends Catalog {
       val columnName = row(0).toString
       var columnTypeStr = row(1).toString
 
-      /*
-      if (columnTypeStr.equalsIgnoreCase("character varying") || "text".equalsIgnoreCase(columnTypeStr) || "VARCHAR".equalsIgnoreCase(columnTypeStr) || "VARCHAR2".equalsIgnoreCase(columnTypeStr)) {
-        columnTypeStr = "STRING"
-      }
-      if ("double precision".equalsIgnoreCase(columnTypeStr) || "decimal".equalsIgnoreCase(columnTypeStr) || "real".equalsIgnoreCase(columnTypeStr)) {
-        columnTypeStr = "DOUBLE"
-      }
-      if ("numeric".equalsIgnoreCase(columnTypeStr) || "serial".equalsIgnoreCase(columnTypeStr) || "smallint".equalsIgnoreCase(columnTypeStr)) {
-        columnTypeStr = "INTEGER"
-      }
-      if ("bigserial".equalsIgnoreCase(columnTypeStr) || "bigint".equalsIgnoreCase(columnTypeStr)) {
-        columnTypeStr = "BIGINT"
-      }
-      */
       this.mLog.info("list columns: " + columnName + " " + columnTypeStr)
       val column = new Column(columnName, this.getColumnType(columnTypeStr))
       columns.add(column)
@@ -139,5 +126,4 @@ object PostgresCatalog extends Catalog {
       case "bool"=> ColumnType.BOOLEAN
     }
   }
-
 }

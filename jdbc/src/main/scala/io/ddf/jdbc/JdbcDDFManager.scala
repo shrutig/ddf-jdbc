@@ -17,9 +17,9 @@ import io.ddf.{DDF, DDFManager}
 import io.ddf.DDFManager.EngineType
 
 class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
-                     engineType: String) extends DDFManager {
+                     engineType: EngineType) extends DDFManager {
 
-  override def getEngine: String = engineType
+  override def getEngine: String = engineType.name()
 
   def catalog: Catalog = SimpleCatalog
 
@@ -29,7 +29,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
   val baseSchema = Config.getValue(getEngine, "workspaceSchema")
   val canCreateView = Config.getValue(getEngine, "canCreateView")
     .equalsIgnoreCase("yes")
-  setEngineType(EngineType.fromString(engineType))
+  setEngineType(engineType)
   setDataSourceDescriptor(dataSourceDescriptor)
 
   def isSinkAllowed = baseSchema != null
@@ -123,7 +123,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
 
   override def getOrRestoreDDFUri(ddfURI: String): DDF = null
 
-  override def transfer(fromEngine: String, ddfuri: String): DDF = {
+  override def transfer(fromEngine: UUID, ddfuri: String): DDF = {
     throw new DDFException("Load DDF from file is not supported!")
   }
 
