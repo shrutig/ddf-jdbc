@@ -2,8 +2,8 @@ package io.ddf.jdbc
 
 
 import java.sql.{Connection, DriverManager}
-import java.util
 import java.util.UUID
+import java.util.Properties
 
 import io.ddf.content.Schema
 import io.ddf.content.Schema.Column
@@ -39,7 +39,11 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     val credentials = dataSourceDescriptor.getDataSourceCredentials.asInstanceOf[JDBCDataSourceCredentials]
     val jdbcUser = credentials.getUsername
     val jdbcPassword = credentials.getPassword
-    DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword)
+    val prop = new Properties()
+    prop.put("UID", jdbcUser);
+    prop.put("PWD", jdbcPassword);
+    prop.put("tcpKeepAlive", "true");
+    DriverManager.getConnection(jdbcUrl, prop)
   }
 
   def getConnection(): Connection = {
