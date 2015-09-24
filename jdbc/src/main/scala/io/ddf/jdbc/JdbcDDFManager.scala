@@ -134,6 +134,10 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     catalog.showTables(getConnection(), schemaName)
   }
 
+  def showViews(schemaName: String): java.util.List[String] = {
+    catalog.showViews(getConnection(), schemaName)
+  }
+
   def getTableSchema(tableName: String) = {
     catalog.getTableSchema(getConnection(), null, tableName)
   }

@@ -26,6 +26,8 @@ trait Catalog extends ALoggable {
 
   def showTables(connection: Connection, schemaName: String): util.List[String]
 
+  def showViews(connection: Connection, schemaName: String): util.List[String]
+
   def showDatabases(connection: Connection): util.List[String]
 
   def setDatabase(connection: Connection, database : String)
@@ -75,6 +77,16 @@ object SimpleCatalog extends Catalog {
     val tables: util.List[String] = new util.ArrayList[String]
     val metadata: DatabaseMetaData = connection.getMetaData
     val rs: ResultSet = metadata.getTables(null, schemaName, null, null)
+    while (rs.next()) {
+      tables.add(rs.getString("TABLE_NAME"))
+    }
+    tables
+  }
+
+  override def showViews(connection: Connection, schemaName: String): util.List[String] = {
+    val tables: util.List[String] = new util.ArrayList[String]
+    val metadata: DatabaseMetaData = connection.getMetaData
+    val rs: ResultSet = metadata.getTables(null, schemaName, null, Array("VIEW"))
     while (rs.next()) {
       tables.add(rs.getString("TABLE_NAME"))
     }

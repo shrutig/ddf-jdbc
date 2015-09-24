@@ -53,6 +53,19 @@ object PostgresCatalog extends Catalog {
     new Schema(name, columns)
   }
 
+  override def showViews(connection: Connection, schemaName: String): util.List[String] = {
+    var schema: String = schemaName
+    if (schema == null) {
+      schema = curSchema
+    }
+    val tables: util.List[String] = new util.ArrayList[String]
+    val metadata: DatabaseMetaData = connection.getMetaData
+    val rs: ResultSet = metadata.getTables(null, schema, null, Array("VIEW"))
+    while (rs.next()) {
+      tables.add(rs.getString("TABLE_NAME"))
+    }
+    tables
+  }
 
   override def showTables(connection: Connection, schemaName: String): util.List[String] = {
       var schema: String = schemaName
@@ -64,6 +77,8 @@ object PostgresCatalog extends Catalog {
     implicit val catalog = this
     val sqlResult = SqlArrayResultCommand(connection, "information_schema", "tables", sql)
     sqlResult.result.foreach(row => tables.add(row(0).toString))
+    val views = this.showViews(connection, schemaName)
+    tables.removeAll(views)
     tables
   }
 
