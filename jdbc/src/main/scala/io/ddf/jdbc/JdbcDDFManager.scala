@@ -4,6 +4,7 @@ package io.ddf.jdbc
 import java.sql.{Connection, DriverManager}
 import java.util.UUID
 import java.util.Properties
+import java.util
 
 import io.ddf.content.Schema
 import io.ddf.content.Schema.Column
