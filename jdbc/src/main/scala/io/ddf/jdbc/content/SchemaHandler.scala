@@ -50,8 +50,9 @@ class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
     val table_name = s"${this.getDDF.getTableName} ) tmp"
     for (col <- this.getColumns) {
       if (col.getColumnClass eq Schema.ColumnClass.FACTOR) {
-
-        val command = s"select ${col.getName()}, count(${col.getName()}) from ($table_name group by ${col.getName()}"
+        val quotedColName = "\"" + col.getName() + "\""
+        val command = s"select ${quotedColName}, count(${quotedColName}) from " +
+          s"($table_name group by ${quotedColName}"
 
         var sqlResult = this.getManager.sql(command,"" )
         //JMap[String, Integer]
