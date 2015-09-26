@@ -50,9 +50,12 @@ class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
     val table_name = s"${this.getDDF.getTableName} ) tmp"
     for (colIndex <- columnIndexes) {
       val col = this.getColumn(this.getColumnName(colIndex))
-      val command = s"select ${col.getName()}, count(${col.getName()}) from ($table_name group by ${col.getName()}"
+	  
+      val quotedColName = "\"" + col.getName() + "\""
+      val command = s"select ${quotedColName}, count(${quotedColName}) from " +
+        s"($table_name group by ${quotedColName}"
 
-      var sqlResult = this.getManager.sql(command,"" )
+      val sqlResult = this.getManager.sql(command,"" )
       //JMap[String, Integer]
       var result = sqlResult.getRows()
       val levelCounts: java.util.Map[String, Integer] = new java.util.HashMap[String,Integer]()
