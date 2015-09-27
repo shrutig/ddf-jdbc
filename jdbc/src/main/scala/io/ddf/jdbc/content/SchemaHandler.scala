@@ -48,30 +48,30 @@ class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
 
     //(select * from hung_test) tmp
     val table_name = s"${this.getDDF.getTableName} ) tmp"
-    for (col <- this.getColumns) {
-      if (col.getColumnClass eq Schema.ColumnClass.FACTOR) {
-        val quotedColName = "\"" + col.getName() + "\""
-        val command = s"select ${quotedColName}, count(${quotedColName}) from " +
-          s"($table_name group by ${quotedColName}"
+    for (colIndex <- columnIndexes) {
+      val col = this.getColumn(this.getColumnName(colIndex))
+	  
+      val quotedColName = "\"" + col.getName() + "\""
+      val command = s"select ${quotedColName}, count(${quotedColName}) from " +
+        s"($table_name group by ${quotedColName}"
 
-        var sqlResult = this.getManager.sql(command,"" )
-        //JMap[String, Integer]
-        var result = sqlResult.getRows()
-        val levelCounts: java.util.Map[String, Integer] = new java.util.HashMap[String,Integer]()
-        for (item <- result) {
-          if(item.split("\t").length > 1)
-            levelCounts.put(item.split("\t")(0), Integer.parseInt(item.split("\t")(1)))
-          else //todo log this properly
-            this.mLog.debug("exception parsing item")
-            this.mLog.debug(item)
-        }
+      val sqlResult = this.getManager.sql(command,"" )
+      //JMap[String, Integer]
+      var result = sqlResult.getRows()
+      val levelCounts: java.util.Map[String, Integer] = new java.util.HashMap[String,Integer]()
+      for (item <- result) {
+        if(item.split("\t").length > 1)
+          levelCounts.put(item.split("\t")(0), Integer.parseInt(item.split("\t")(1)))
+        else //todo log this properly
+          this.mLog.debug("exception parsing item")
+        this.mLog.debug(item)
+      }
 
-        if (levelCounts != null) {
-          val factor: Factor[_] = col.getOptionalFactor
-          val levels: util.List[String] = new util.ArrayList[String](levelCounts.keySet)
-          factor.setLevelCounts(levelCounts)
-          factor.setLevels(levels, false)
-        }
+      if (levelCounts != null) {
+        val factor: Factor[_] = col.getOptionalFactor
+        val levels: util.List[String] = new util.ArrayList[String](levelCounts.keySet)
+        factor.setLevelCounts(levelCounts)
+        factor.setLevels(levels, false)
       }
     }
   }
