@@ -1,6 +1,7 @@
 package io.ddf.jdbc.etl
 
 import java.io.StringReader
+import java.sql.Connection
 import java.util.Collections
 
 import io.ddf.content.{Schema, SqlResult, SqlTypedResult}
@@ -22,7 +23,13 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
   val baseSchema = ddfManager.baseSchema
 
   implicit val catalog = ddfManager.catalog
-  val connection = ddfManager.connection
+  var connection = ddfManager.getConnection()
+
+
+  def getConnection() : Connection = {
+    connection = ddfManager.getConnection()
+    connection
+  }
 
   override def sql2ddf(command: String): DDF = {
     this.sql2ddf(command, null, null, null)
@@ -55,8 +62,10 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
         this.getManager.log(">>> Creating view in database")
         val viewName = genTableName(8)
         //View will allow select commands
-        DdlCommand(connection, baseSchema, "CREATE VIEW " + viewName + " AS (" + command + ")")
-        val viewSchema = if (schema == null) catalog.getViewSchema(connection, baseSchema, viewName) else schema
+        DdlCommand(getConnection(), baseSchema, "CREATE VIEW " + viewName + " AS (" +
+          command + ")")
+        val viewSchema = if (schema == null) catalog.getViewSchema(getConnection(),
+          baseSchema, viewName) else schema
         val viewRep = TableNameRepresentation(viewName, viewSchema)
         // TODO(TJ): This function implementation is wrong.
         ddf.getManager.newDDF(this.getManager, viewRep, Array(Representations.VIEW),  ddf.getNamespace, viewName, viewSchema)
@@ -94,15 +103,16 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
     val l = LoadCommand.parse(command)
     val ddf = ddfManager.getDDFByName(l.tableName)
     val schema = ddf.getSchema
-    val tableName = LoadCommand(connection, baseSchema, schema, l)
+    val tableName = LoadCommand(getConnection(), baseSchema, schema, l)
     val newDDF = ddfManager.getDDFByName(tableName)
     newDDF
   }
 
   def create2ddf(command: String, schema: Schema): DDF = {
     val tableName = Parsers.parseCreate(command).tableName
-    DdlCommand(connection, baseSchema, command)
-    val tableSchema = if (schema == null) catalog.getTableSchema(connection, baseSchema, tableName) else schema
+    DdlCommand(getConnection(), baseSchema, command)
+    val tableSchema = if (schema == null) catalog.getTableSchema(getConnection(),
+      baseSchema, tableName) else schema
     val emptyRep = TableNameRepresentation(tableName, tableSchema)
     ddf.getManager.newDDF(this.getManager, emptyRep, Array(Representations.VIEW), ddf.getNamespace, tableName, tableSchema)
   }
@@ -119,21 +129,21 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
     this.ddfManager.log("run sql in ddf-jdbc, command is : " + command)
     val maxRowsInt: Int = if (maxRows == null) Integer.MAX_VALUE else maxRows
     if (StringUtils.startsWithIgnoreCase(command.trim, "DROP")) {
-      DdlCommand(connection, baseSchema, command)
+      DdlCommand(getConnection(), baseSchema, command)
       new SqlResult(null, Collections.singletonList("0"))
     } else if (StringUtils.startsWithIgnoreCase(command.trim, "LOAD")) {
       ddfManager.checkSinkAllowed()
       val l = LoadCommand.parse(command)
       val ddf = ddfManager.getDDFByName(l.tableName)
       val schema = ddf.getSchema
-      val tableName = LoadCommand(connection, baseSchema, schema, l)
+      val tableName = LoadCommand(getConnection(), baseSchema, schema, l)
       new SqlResult(null, Collections.singletonList(tableName))
     } else if (StringUtils.startsWithIgnoreCase(command.trim, "CREATE")) {
       create2ddf(command, null)
       new SqlResult(null, Collections.singletonList("0"))
     } else {
       val tableName = ddf.getSchemaHandler.newTableName()
-      SqlCommand(connection, baseSchema, tableName, command, maxRowsInt,
+      SqlCommand(getConnection(), baseSchema, tableName, command, maxRowsInt,
         "\t", this.ddfManager.getEngine)
     }
   }
