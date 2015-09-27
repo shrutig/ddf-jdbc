@@ -21,7 +21,8 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
   val ddfManager: JdbcDDFManager = ddf.getManager.asInstanceOf[JdbcDDFManager]
   implicit val catalog = ddfManager.catalog
   //count all,sum,mean,variance,notNullCount,min,max
-  protected def SUMMARY_FUNCTIONS = "COUNT(*), SUM(%s), AVG(%s), VAR_SAMP(%s),COUNT(%s), MIN(%s), MAX(%s)"
+  protected def SUMMARY_FUNCTIONS = "COUNT(%s), SUM(%s), AVG(%s), VAR_SAMP" +
+    "(%s),COUNT(*) - COUNT(%s), MIN(%s), MAX(%s)"
 
   //TODO update this by computing Summary on single column
   private def getSummaryVector(columnName: String): Option[Summary] = {
