@@ -48,7 +48,8 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
     var sql: String = StringUtils.join(sqlCommand, ", ")
     val tableName = "(" + this.getDDF.getTableName + ") tmp"
     sql = String.format("select %s from %s", sql,  tableName )
-    val result = SqlArrayResultCommand(ddfManager.connection, ddfManager.baseSchema, tableName, sql).result.get(0)
+    val result = SqlArrayResultCommand(ddfManager.getConnection(), ddfManager
+      .baseSchema, tableName, sql).result.get(0)
     var i: Int = 0
     numericColumns.foreach { column =>
       val count = if (result(i) == null) -1 else result(i).toString.toLong
@@ -123,7 +124,8 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
     var sql: String = StringUtils.join(sqlCommand, ", ")
     val tableName = "(" + this.getDDF.getTableName + ") tmp"
     sql = String.format("select %s from %s", sql, tableName)
-    val result = SqlArrayResultCommand(ddfManager.connection, ddfManager.baseSchema, tableName, sql).result.get(0)
+    val result = SqlArrayResultCommand(ddfManager.getConnection(), ddfManager
+      .baseSchema, tableName, sql).result.get(0)
     var i: Int = 0
     for (column <- numericColumns) {
       val summary: NumericSimpleSummary = new NumericSimpleSummary
