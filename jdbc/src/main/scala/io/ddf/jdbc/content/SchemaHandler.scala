@@ -43,23 +43,35 @@ class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
       }
     }
     var listLevelCounts: JMap[Integer, JMap[String, Integer]] = null
-    val repHandler: IHandleRepresentations = this.getDDF.getRepresentationHandler
-    if (columnIndexes.size > 0) {
-      val sqlResult = this.getDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult]
-      listLevelCounts = GetMultiFactor.getFactorCounts(sqlResult.result, columnIndexes, columnTypes, classOf[Array[AnyRef]])
-      if (listLevelCounts == null) {
-        throw new DDFException("Error getting factor levels counts")
+
+    //loop through all factors and compute factor
+
+    //(select * from hung_test) tmp
+    val table_name = s"${this.getDDF.getTableName} ) tmp"
+    for (colIndex <- columnIndexes) {
+      val col = this.getColumn(this.getColumnName(colIndex))
+	  
+      val quotedColName = "\"" + col.getName() + "\""
+      val command = s"select ${quotedColName}, count(${quotedColName}) from " +
+        s"($table_name group by ${quotedColName}"
+
+      val sqlResult = this.getManager.sql(command,"" )
+      //JMap[String, Integer]
+      var result = sqlResult.getRows()
+      val levelCounts: java.util.Map[String, Integer] = new java.util.HashMap[String,Integer]()
+      for (item <- result) {
+        if(item.split("\t").length > 1)
+          levelCounts.put(item.split("\t")(0), Integer.parseInt(item.split("\t")(1)))
+        else //todo log this properly
+          this.mLog.debug("exception parsing item")
+        this.mLog.debug(item)
       }
-      import scala.collection.JavaConversions._
-      for (colIndex <- columnIndexes) {
-        val column: Column = this.getColumn(this.getColumnName(colIndex))
-        val levelCounts: JMap[String, Integer] = listLevelCounts.get(colIndex)
-        if (levelCounts != null) {
-          val factor: Factor[_] = column.getOptionalFactor
-          val levels: util.List[String] = new util.ArrayList[String](levelCounts.keySet)
-          factor.setLevelCounts(levelCounts)
-          factor.setLevels(levels, false)
-        }
+
+      if (levelCounts != null) {
+        val factor: Factor[_] = col.getOptionalFactor
+        val levels: util.List[String] = new util.ArrayList[String](levelCounts.keySet)
+        factor.setLevelCounts(levelCounts)
+        factor.setLevels(levels, false)
       }
     }
   }

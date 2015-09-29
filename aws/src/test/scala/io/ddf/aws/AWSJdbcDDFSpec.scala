@@ -34,11 +34,11 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
 
 object ManagerFactory {
   val engineDescriptor = EngineDescriptor("aws")
-  val jdbcDDFManager = DDFManager.get("aws",engineDescriptor).asInstanceOf[JdbcDDFManager]
+  val jdbcDDFManager = DDFManager.get(DDFManager.EngineType.AWS, engineDescriptor).asInstanceOf[JdbcDDFManager]
 }
 
 object AWSLoader extends Loader {
-  override def engine: String = "aws"
+  override def engine: EngineType = DDFManager.EngineType.AWS
 
   override def jdbcDDFManager: JdbcDDFManager = ManagerFactory.jdbcDDFManager
 

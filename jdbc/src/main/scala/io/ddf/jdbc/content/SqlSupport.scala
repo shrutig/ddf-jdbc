@@ -1,7 +1,7 @@
 package io.ddf.jdbc.content
 
 import java.io.FileReader
-import java.sql.Connection
+import java.sql.{ResultSet, Connection}
 import java.text.SimpleDateFormat
 import java.util
 import java.util.Date
@@ -18,6 +18,7 @@ import io.ddf.jdbc.utils.Utils
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.util.parsing.combinator.{JavaTokenParsers, RegexParsers}
 import scala.util.{Failure, Success, Try}
 import scala.xml.Utility
@@ -32,27 +33,39 @@ object SqlCommand {
     if (!engineType.equals("sfdc")) {
       catalog.setSchema(connection, schemaName)
     }
-    val list = SQL(command).map { rs =>
-      val actualRS = rs.underlying
-      val md = actualRS.getMetaData
-      val colCount = md.getColumnCount
+
+    // Use prepareStatement to get metadata even when the resultset is empty
+    val rs: ResultSet = connection.prepareStatement(command).executeQuery()
+
+    // Get schema info
+    val md = rs.getMetaData
+    val colCount = md.getColumnCount
+    val columns: Array[Column] = new Array[Column](colCount)
+    var colIdx = 0
+    while (colIdx < colCount) {
+      //resultset in jdbc start at 1
+      val rsIdx = colIdx + 1
+      val colName = md.getColumnName(rsIdx)
+      val colType = md.getColumnType(rsIdx)
+      columns(colIdx) = new Column(colName, Utils.getDDFType(colType))
+      colIdx += 1
+    }
+    schema.setColumns(columns.toList.asJava)
+
+    // Get data
+    var list = new ListBuffer[String]()
+    while(rs.next()) {
       val row: Array[String] = new Array[String](colCount)
-      val columns: Array[Column] = new Array[Column](colCount)
       var colIdx = 0
       while (colIdx < colCount) {
-        //resultset in jdbc start at 1
-        val rsIdx = colIdx + 1
-        val obj = actualRS.getObject(rsIdx)
+        val obj = rs.getObject(colIdx+1)
         row(colIdx) = if (obj == null) null else obj.toString
-        val colName = md.getColumnName(rsIdx)
-        val colType = md.getColumnType(rsIdx)
-        columns(colIdx) = new Column(colName, Utils.getDDFType(colType))
-        colIdx = colIdx + 1
+        colIdx += 1
       }
-      schema.setColumns(columns.toList.asJava)
       val rowStr = row.mkString(separator)
-      rowStr
-    }.list().apply
+      list += rowStr
+    }
+
     val subList = if (maxRows < list.size) list.take(maxRows) else list
     new SqlResult(schema, subList)
   }

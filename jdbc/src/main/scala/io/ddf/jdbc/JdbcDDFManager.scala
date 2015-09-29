@@ -2,8 +2,9 @@ package io.ddf.jdbc
 
 
 import java.sql.{Connection, DriverManager}
-import java.util
 import java.util.UUID
+import java.util.Properties
+import java.util
 
 import io.ddf.content.Schema
 import io.ddf.content.Schema.Column
@@ -14,12 +15,12 @@ import io.ddf.jdbc.etl.SqlHandler
 import io.ddf.jdbc.utils.Utils
 import io.ddf.misc.Config
 import io.ddf.{DDF, DDFManager}
-
+import io.ddf.DDFManager.EngineType
 
 class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
-                     engineType: String) extends DDFManager {
+                     engineType: EngineType) extends DDFManager {
 
-  override def getEngine: String = engineType
+  override def getEngine: String = engineType.name()
 
   def catalog: Catalog = SimpleCatalog
 
@@ -39,7 +40,11 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     val credentials = dataSourceDescriptor.getDataSourceCredentials.asInstanceOf[JDBCDataSourceCredentials]
     val jdbcUser = credentials.getUsername
     val jdbcPassword = credentials.getPassword
-    DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword)
+    val prop = new Properties()
+    prop.put("UID", jdbcUser);
+    prop.put("PWD", jdbcPassword);
+    prop.put("tcpKeepAlive", "true");
+    DriverManager.getConnection(jdbcUrl, prop)
   }
 
   def getConnection(): Connection = {
@@ -123,7 +128,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
 
   override def getOrRestoreDDFUri(ddfURI: String): DDF = null
 
-  override def transfer(fromEngine: String, ddfuri: String): DDF = {
+  override def transfer(fromEngine: UUID, ddfuri: String): DDF = {
     throw new DDFException("Load DDF from file is not supported!")
   }
 
@@ -132,6 +137,10 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
 
   def showTables(schemaName: String): java.util.List[String] = {
     catalog.showTables(getConnection(), schemaName)
+  }
+
+  def showViews(schemaName: String): java.util.List[String] = {
+    catalog.showViews(getConnection(), schemaName)
   }
 
   def getTableSchema(tableName: String) = {
