@@ -66,8 +66,11 @@ object SqlCommand {
       list += rowStr
     }
 
+    connection.close()
+
     val subList = if (maxRows < list.size) list.take(maxRows) else list
     new SqlResult(schema, subList)
+
   }
 }
 
@@ -110,7 +113,6 @@ object SqlArrayResultCommand {
 object DdlCommand {
   def apply(connection: Connection, schemaName: String, command: String)(implicit catalog: Catalog) = {
     val db = DB(connection)
-    db.autoClose(false)
     db localTx { implicit session =>
       SQL(command).executeUpdate().apply()
     }
@@ -186,7 +188,6 @@ object LoadCommand {
     val colStr = columns.map(col => col.getName).mkString(",")
     val paramStr = columns.map(col => "?").mkString(",")
     val db = DB(connection)
-    db.autoClose(false)
     implicit val session = db autoCommitSession()
     catalog.setSchema(connection, schemaName)
     db localTx { implicit session =>

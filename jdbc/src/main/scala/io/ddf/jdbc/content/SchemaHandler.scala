@@ -48,7 +48,7 @@ class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
 
     //(select * from hung_test) tmp
     val table_name = s"${this.getDDF.getTableName} ) tmp"
-    for (colIndex <- columnIndexes) {
+    columnIndexes.par.foreach( colIndex => {
       val col = this.getColumn(this.getColumnName(colIndex))
 	  
       val quotedColName = "\"" + col.getName() + "\""
@@ -73,7 +73,7 @@ class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
         factor.setLevelCounts(levelCounts)
         factor.setLevels(levels, false)
       }
-    }
+    })
   }
 }
 
