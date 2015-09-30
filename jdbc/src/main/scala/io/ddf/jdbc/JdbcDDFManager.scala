@@ -53,6 +53,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     config.setMaximumPoolSize(Config.getValue(getEngine, "maxJDBCPoolSize").toInt)
     config.setPoolName(getUUID.toString)
     config.setRegisterMbeans(true)
+    config.addDataSourceProperty("prepareThreshold", "0")
     new HikariDataSource(config);
   }
 
