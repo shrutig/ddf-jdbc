@@ -50,7 +50,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     config.setJdbcUrl(jdbcUrl)
     config.setUsername(jdbcUser)
     config.setPassword(jdbcPassword)
-    config.setMaximumPoolSize(Config.getValue(getEngine, "maxJDBCPoolSize").toInt)
+    config.setMaximumPoolSize(if (Config.getValue(getEngine, "maxJDBCPoolSize") == null) 15 else Config.getValue(getEngine, "maxJDBCPoolSize").toInt)
     config.setPoolName(getUUID.toString)
     config.setRegisterMbeans(true)
     // This is for pushing prepared statements to Postgres server as in
