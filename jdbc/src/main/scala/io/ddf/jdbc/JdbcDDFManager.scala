@@ -1,11 +1,13 @@
 package io.ddf.jdbc
 
 
+import java.net.URI
 import java.sql.{Connection, DriverManager}
 import java.util.UUID
 import java.util.Properties
 import java.util
 
+import com.zaxxer.hikari.{HikariDataSource, HikariConfig}
 import io.ddf.content.Schema
 import io.ddf.content.Schema.Column
 import io.ddf.datasource.{DataSourceDescriptor, JDBCDataSourceCredentials}
@@ -16,6 +18,7 @@ import io.ddf.jdbc.utils.Utils
 import io.ddf.misc.Config
 import io.ddf.{DDF, DDFManager}
 import io.ddf.DDFManager.EngineType
+import scalikejdbc.ConnectionPool
 
 class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
                      engineType: EngineType) extends DDFManager {
@@ -26,32 +29,52 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
 
   val driverClassName = Config.getValue(getEngine, "jdbcDriverClass")
   Class.forName(driverClassName)
-  var connection = initializeConnection(getEngine)
+
+  var connectionPool = initializeConnectionPool(getEngine)
+
   val baseSchema = Config.getValue(getEngine, "workspaceSchema")
   val canCreateView = Config.getValue(getEngine, "canCreateView")
     .equalsIgnoreCase("yes")
   setEngineType(engineType)
   setDataSourceDescriptor(dataSourceDescriptor)
+  addRTK()
 
+  def addRTK(): Unit = {
+    var jdbcUrl = dataSourceDescriptor.getDataSourceUri.getUri.toString
+
+    if (this.getEngineType.name().equalsIgnoreCase("sfdc")) {
+      val rtkString = System.getenv("SFDC_RTK")
+      if (rtkString != null) {
+        jdbcUrl += "RTK='" + rtkString + "';";
+      }
+      this.getDataSourceDescriptor.getDataSourceUri().setUri(new URI(jdbcUrl));
+    }
+  }
+  
   def isSinkAllowed = baseSchema != null
 
-  def initializeConnection(engine: String) = {
+
+  def initializeConnectionPool(engine: String): HikariDataSource = {
     val jdbcUrl = dataSourceDescriptor.getDataSourceUri.getUri.toString
     val credentials = dataSourceDescriptor.getDataSourceCredentials.asInstanceOf[JDBCDataSourceCredentials]
     val jdbcUser = credentials.getUsername
     val jdbcPassword = credentials.getPassword
-    val prop = new Properties()
-    prop.put("UID", jdbcUser);
-    prop.put("PWD", jdbcPassword);
-    prop.put("tcpKeepAlive", "true");
-    DriverManager.getConnection(jdbcUrl, prop)
+
+    val config:HikariConfig = new HikariConfig()
+    config.setJdbcUrl(jdbcUrl)
+    config.setUsername(jdbcUser)
+    config.setPassword(jdbcPassword)
+    config.setMaximumPoolSize(if (Config.getValue(getEngine, "maxJDBCPoolSize") == null) 15 else Config.getValue(getEngine, "maxJDBCPoolSize").toInt)
+    config.setPoolName(getUUID.toString)
+    config.setRegisterMbeans(true)
+    // This is for pushing prepared statements to Postgres server as in
+    // https://jdbc.postgresql.org/documentation/head/server-prepare.html
+    //config.addDataSourceProperty("prepareThreshold", 0)
+    new HikariDataSource(config);
   }
 
   def getConnection(): Connection = {
-    if (connection != null && !connection.isValid(10)) {
-      connection = this.initializeConnection(getEngine)
-    }
-    connection
+    connectionPool.getConnection
   }
 
   def getCanCreateView(): Boolean = {
@@ -169,6 +192,6 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
   }
 
   def disconnect() = {
-    connection.close()
+    connectionPool.shutdown()
   }
 }
