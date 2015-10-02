@@ -66,8 +66,8 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     config.setPassword(jdbcPassword)
 
     // We want to retire the connection as soon as possible
-    config.setIdleTimeout(if (Config.getValue(getEngine, "jdbcPoolConnIdleTimeout") == null) 10000 else Config.getValue(getEngine, "jdbcPoolConnIdleTimeout").toLong)
-    config.setMaxLifetime(if (Config.getValue(getEngine, "jdbcPoolConnMaxLifetime") == null) 20000 else Config.getValue(getEngine, "jdbcPoolConnMaxLifetime").toLong)
+    config.setIdleTimeout(if (Config.getValue(getEngine, "jdbcPoolConnIdleTimeoutMs") == null) 10000 else Config.getValue(getEngine, "jdbcPoolConnIdleTimeoutMs").toLong)
+    config.setMaxLifetime(if (Config.getValue(getEngine, "jdbcPoolConnMaxLifetimeMs") == null) 20000 else Config.getValue(getEngine, "jdbcPoolConnMaxLifetimeMs").toLong)
 
     config.setMinimumIdle(if (Config.getValue(getEngine, "jdbcPoolMinIdleConns") == null) 2 else Config.getValue(getEngine, "jdbcPoolMinIdleConns").toInt)
     config.setMaximumPoolSize(if (Config.getValue(getEngine, "maxJDBCPoolSize") == null) 15 else Config.getValue(getEngine, "maxJDBCPoolSize").toInt)
