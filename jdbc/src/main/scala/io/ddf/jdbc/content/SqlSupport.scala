@@ -29,7 +29,7 @@ object SqlCommand {
 
   def apply(connection: Connection, schemaName: String, tableName: String, command: String, maxRows: Int, separator: String, engineType: String)(implicit catalog: Catalog) = {
     val schema = new Schema(tableName, "")
-    if (!engineType.equals("sfdc")) {
+    if (!engineType.equalsIgnoreCase("sfdc")) {
       catalog.setSchema(connection, schemaName)
     }
 

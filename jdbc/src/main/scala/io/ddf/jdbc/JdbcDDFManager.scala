@@ -1,6 +1,7 @@
 package io.ddf.jdbc
 
 
+import java.net.URI
 import java.sql.{Connection, DriverManager}
 import java.util.UUID
 import java.util.Properties
@@ -36,7 +37,20 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     .equalsIgnoreCase("yes")
   setEngineType(engineType)
   setDataSourceDescriptor(dataSourceDescriptor)
+  addRTK()
 
+  def addRTK(): Unit = {
+    var jdbcUrl = dataSourceDescriptor.getDataSourceUri.getUri.toString
+
+    if (this.getEngineType.name().equalsIgnoreCase("sfdc")) {
+      val rtkString = System.getenv("SFDC_RTK")
+      if (rtkString != null) {
+        jdbcUrl += "RTK='" + rtkString + "';";
+      }
+      this.getDataSourceDescriptor.getDataSourceUri().setUri(new URI(jdbcUrl));
+    }
+  }
+  
   def isSinkAllowed = baseSchema != null
 
 
