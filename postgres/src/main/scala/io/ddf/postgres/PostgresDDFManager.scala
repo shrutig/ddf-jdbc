@@ -24,6 +24,13 @@ class PostgresDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineType:
     this.sql("set search_path to " + schemaName)
   }
 
+  override def showTables(schemaName: String): java.util.List[String] = {
+    val tables = catalog.showTables(getConnection(), schemaName)
+    val views = catalog.showViews(getConnection(), schemaName)
+    tables.removeAll(views)
+    tables
+  }
+
 }
 
 
@@ -64,6 +71,7 @@ object PostgresCatalog extends Catalog {
     while (rs.next()) {
       tables.add(rs.getString("TABLE_NAME"))
     }
+    connection.close()
     tables
   }
 
@@ -77,8 +85,6 @@ object PostgresCatalog extends Catalog {
     implicit val catalog = this
     val sqlResult = SqlArrayResultCommand(connection, "information_schema", "tables", sql)
     sqlResult.result.foreach(row => tables.add(row(0).toString))
-    val views = this.showViews(connection, schemaName)
-    tables.removeAll(views)
     tables
   }
 
@@ -108,6 +114,7 @@ object PostgresCatalog extends Catalog {
       val column = new Column(columnName, Utils.getDDFType(columnType))
       columns.add(column)
     }
+    connection.close()
     columns
   }
 
@@ -117,6 +124,7 @@ object PostgresCatalog extends Catalog {
     while (rs.next()) {
       schemas.add(rs.getString("TABLE_SCHEM"))
     }
+    connection.close()
     schemas
   }
 
