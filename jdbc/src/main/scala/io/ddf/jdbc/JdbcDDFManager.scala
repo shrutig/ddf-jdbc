@@ -24,12 +24,13 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
                      engineType: EngineType) extends DDFManager {
 
   override def getEngine: String = engineType.name()
-
+  this.setEngineType(engineType)
+  this.setDataSourceDescriptor(dataSourceDescriptor)
   def catalog: Catalog = SimpleCatalog
 
   val driverClassName = Config.getValue(getEngine, "jdbcDriverClass")
   Class.forName(driverClassName)
-
+  addRTK()
   var connectionPool = initializeConnectionPool(getEngine)
 
   val baseSchema = Config.getValue(getEngine, "workspaceSchema")
@@ -37,7 +38,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     .equalsIgnoreCase("yes")
   setEngineType(engineType)
   setDataSourceDescriptor(dataSourceDescriptor)
-  addRTK()
+
 
   def addRTK(): Unit = {
     var jdbcUrl = dataSourceDescriptor.getDataSourceUri.getUri.toString
