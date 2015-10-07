@@ -104,6 +104,9 @@ object SqlArrayResultCommand {
       schema.setColumns(columns.toList.asJava)
       row
     }.list().apply
+
+    session.close()
+
     val subList = if (maxRows < list.size) list.take(maxRows) else list
     new SqlArrayResult(schema, subList)
   }
