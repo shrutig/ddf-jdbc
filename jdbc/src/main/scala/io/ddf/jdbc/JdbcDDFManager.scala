@@ -20,6 +20,8 @@ import io.ddf.{DDF, DDFManager}
 import io.ddf.DDFManager.EngineType
 import scalikejdbc.ConnectionPool
 
+import scala.util.{Success, Failure, Try}
+
 class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
                      engineType: EngineType) extends DDFManager {
 
@@ -77,7 +79,22 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     // This is for pushing prepared statements to Postgres server as in
     // https://jdbc.postgresql.org/documentation/head/server-prepare.html
     //config.addDataSourceProperty("prepareThreshold", 0)
-    new HikariDataSource(config);
+    val pool: HikariDataSource = new HikariDataSource(config)
+
+    // check for valid jdbc login information
+    // in case of sfdc
+    val try_connect = Try(pool.getConnection.createStatement().execute("SELECT 1"))
+    try_connect match {
+      case Failure(ex) =>
+        if (ex.getMessage.contains("INVALID_LOGIN")) {
+          pool.shutdown()
+          throw ex
+        }
+
+      case Success(_) => // Can execute query, good!!!
+    }
+
+    pool
   }
 
   def getConnection(): Connection = {
