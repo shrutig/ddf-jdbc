@@ -1,11 +1,15 @@
 package io.ddf.jdbc.content
 
 import java.util
+import java.util.{Arrays, List => JList}
 
+import com.google.common.base.Joiner
 import com.google.common.collect.Lists
 import io.ddf.DDF
+import io.ddf.content.ViewHandler.{Column, Expression}
 import io.ddf.datasource.SQLDataSourceDescriptor
 import io.ddf.exception.DDFException
+import io.ddf.jdbc.etl.SqlHandler
 
 import scala.collection.JavaConversions._
 
@@ -33,7 +37,7 @@ class ViewHandler(ddf: DDF) extends io.ddf.content.ViewHandler(ddf) {
   }
 
   override def getRandomSampleByNum(numSamples: Int, withReplaement: Boolean,
-                                    seed: Int) : DDF = {
+                                    seed: Int): DDF = {
     if (numSamples > MAX_SAMPLE_SIZE) {
       throw new IllegalArgumentException("Number of samples is currently " +
         "limited to " + MAX_SAMPLE_SIZE)
@@ -82,5 +86,26 @@ class ViewHandler(ddf: DDF) extends io.ddf.content.ViewHandler(ddf) {
     } else {
       null.asInstanceOf[DDF]
     }
+  }
+
+  override def _subset(columnExpr: JList[Column], filter: Expression): DDF = {
+    updateVectorName(filter, this.getDDF)
+    mLog.info("Updated filter: " + filter)
+    val colNames: Array[String] = new Array[String](columnExpr.size)
+    var i: Int = 0
+    while (i < columnExpr.size) {
+      updateVectorName(columnExpr.get(i), this.getDDF)
+      colNames(i) = columnExpr.get(i).getName
+      i += 1;
+    }
+    mLog.info("Updated columns: " + Arrays.toString(columnExpr.toArray))
+    val table = s"(${this.getDDF.getTableName}) ${this.getDDF.getSqlHandler.asInstanceOf[SqlHandler].genTableName(8)}"
+    var sqlCmd: String = String.format("SELECT %s FROM %s", colNames.mkString(","), table)
+    if (filter != null) {
+      sqlCmd = String.format("%s WHERE %s", sqlCmd, filter.toSql)
+    }
+    mLog.info("sql = {}", sqlCmd)
+    val subset: DDF = this.getDDF.getSqlHandler.sql2ddf(sqlCmd)
+    return subset
   }
 }
