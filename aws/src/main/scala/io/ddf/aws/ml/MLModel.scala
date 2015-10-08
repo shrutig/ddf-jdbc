@@ -8,9 +8,13 @@ import io.ddf.misc.{Config}
 
 class MLModel(rawModel: Object) extends io.ddf.ml.Model(rawModel) {
 
-  val SQL_REGRESSION = "CREATE TABLE ? (score float8);"
-  val SQL_BINARY = "CREATE TABLE ? (bestAnswer int4,score float8);"
+  val SQL_REGRESSION = "CREATE TABLE ? (score float8)"
+  val SQL_BINARY = "CREATE TABLE ? (bestAnswer int4,score float8)"
   val SQL_ClASSIFICATION = "CREATE TABLE ? ();"
+
+  def predict(ddf:DDF,var1:Array[Double]):Double ={
+   AwsModelHelper.predict(ddf,var1,rawModel.toString)
+  }
 
   def predictDataSource(ddf: DDF, datasourceId: String): DDF = {
     val batchId = AwsModelHelper.createBatchPrediction(rawModel.toString, datasourceId, Config.getValue(ddf.getEngine,
@@ -22,7 +26,8 @@ class MLModel(rawModel: Object) extends io.ddf.ml.Model(rawModel) {
       case "REGRESSION" => getDDF(SQL_REGRESSION, tableName, ddf)
     }
     AwsModelHelper.copyFromS3(ddf, Config.getValue(ddf.getEngine,
-      "s3outputUrl") + "/batchPrediction/results/" + asd + ".csv.gz", Config.getValue(ddf.getEngine, "region"), tableName)
+      "s3outputUrl") + "/batch-prediction/result/" + rawModel.toString + ".gz", Config.getValue(ddf.getEngine, "region"),
+    tableName)
     newDDF
   }
 

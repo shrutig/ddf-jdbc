@@ -16,6 +16,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 public class CrossValidation {
     private Date date = new Date();
@@ -33,20 +34,21 @@ public class CrossValidation {
         }
     }
 
-    private String SQL = "CREATE TABLE ? AS SELECT * FROM ? ORDER BY RANDOM() LIMIT ?;";
-
-    //TODO : Change implemtation of CVK and CVRandom
+    private String SQL = "CREATE TABLE ? AS SELECT * FROM ? ORDER BY RANDOM() LIMIT ?";
+    private String SQL_CVK = "CREATE TABLE ? AS SELECT * FROM ? LIMIT ? OFFSET ?";
+    private float TRAIN = 0.7f;
+    private float TEST = 0.7f;
 
     public List<CrossValidationSet> CVRandom(int k, double trainingSize, long seed) throws DDFException {
         List<CrossValidationSet> finalDDFlist = new ArrayList<CrossValidationSet>();
         long resultSize = rowCount / ((int) trainingSize);
         for (int i = 0; i < k; i++) {
             String tempView = "temp" + date.getTime() + i;
-            executeDDL(SQL, tempView + "test", (long)(resultSize*0.3));
-            executeDDL(SQL, tempView + "train", (long)(resultSize*0.7));
+            executeDDL(SQL, tempView + "test", (long) (resultSize * TEST), -1);
+            executeDDL(SQL, tempView + "train", (long) (resultSize * TRAIN), -1);
             DDF trainDDF = create(tempView + "train");
             DDF testDDF = create(tempView + "test");
-            finalDDFlist.add(new CrossValidationSet(trainDDF,testDDF));
+            finalDDFlist.add(new CrossValidationSet(trainDDF, testDDF));
         }
         return finalDDFlist;
     }
@@ -67,21 +69,23 @@ public class CrossValidation {
         long resultSize = rowCount / k;
         for (int i = 0; i < k; i++) {
             String tempView = "temp" + date.getTime() + i;
-            executeDDL(SQL, tempView + "test", resultSize);
-            executeDDL(SQL, tempView + "train", resultSize);
+            executeDDL(SQL_CVK, tempView + "test", (long) (resultSize * TEST), i * resultSize);
+            executeDDL(SQL_CVK, tempView + "train", (long) (resultSize * TRAIN), (long) ((i + TEST) * resultSize));
             DDF trainDDF = create(tempView + "train");
             DDF testDDF = create(tempView + "test");
-            finalDDFlist.add(new CrossValidationSet(trainDDF,testDDF));
+            finalDDFlist.add(new CrossValidationSet(trainDDF, testDDF));
         }
         return finalDDFlist;
     }
 
-    public void executeDDL(String ddlString, String temp, long resultSize) {
+    public void executeDDL(String ddlString, String temp, long resultSize, long offset) {
         try (Connection conn = awsddfManager.getConnection();) {
             try (PreparedStatement stmt = conn.prepareStatement(ddlString);) {
                 stmt.setString(1, temp);
                 stmt.setString(2, ddf.getTableName());
                 stmt.setLong(3, resultSize);
+                if (offset > 0)
+                    stmt.setLong(4, offset);
                 stmt.executeUpdate();
             } catch (SQLException exception) {
                 throw new RuntimeException(exception);

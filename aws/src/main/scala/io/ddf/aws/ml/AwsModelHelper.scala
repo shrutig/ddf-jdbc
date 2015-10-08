@@ -26,10 +26,10 @@ object AwsModelHelper {
   val DB_PASS = "dbPass"
   val ML_STAGE = "mlStage"
   val ML_ROLE_ARN = "mlRoleArn"
-  val SQL_COPY="COPY ? from ? region ? credentials " +
+  val SQL_COPY = "COPY ? from ? region ? credentials " +
     " \'aws_access_key_id=?;aws_secret_access_key=?\' delimiter ',' ;"
 
-  def copyFromS3(ddf: DDF, s3Source: String, region: String,tableName:String) = {
+  def copyFromS3(ddf: DDF, s3Source: String, region: String, tableName: String) = {
     var connection: Connection = null
     var preparedStatement: PreparedStatement = null
     try {
@@ -37,9 +37,9 @@ object AwsModelHelper {
       preparedStatement = connection.prepareStatement(SQL_COPY)
       preparedStatement.setString(1, tableName)
       preparedStatement.setString(2, s3Source)
-       preparedStatement.setString(3, region)
-       preparedStatement.setString(4, Config.getValue(AWS,"accessId"))
-      preparedStatement.setString(5, Config.getValue(AWS,"accessKey"))
+      preparedStatement.setString(3, region)
+      preparedStatement.setString(4, Config.getValue(AWS, "accessId"))
+      preparedStatement.setString(5, Config.getValue(AWS, "accessKey"))
       preparedStatement.executeUpdate()
     }
     catch {
@@ -118,4 +118,15 @@ object AwsModelHelper {
     batchPredictionId
   }
 
+  def predict(ddf: DDF, var1: Array[Double], modelId: String): Double = {
+    val prediction = new PredictRequest()
+    val predictEndPoint = client.createRealtimeEndpoint(new CreateRealtimeEndpointRequest().withMLModelId(modelId))
+    val columns = ddf.getColumnNames.toArray()
+    val pair = columns zip var1
+    pair foreach (u => prediction.addRecordEntry(u._1.toString, u._2.toString))
+    prediction.setMLModelId(modelId)
+    prediction.setPredictEndpoint(predictEndPoint.getRealtimeEndpointInfo.getEndpointUrl)
+    val predicResult = client.predict(prediction)
+    predicResult.getPrediction.getPredictedValue.toDouble
+  }
 }
