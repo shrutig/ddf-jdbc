@@ -23,12 +23,9 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
   val baseSchema = ddfManager.baseSchema
 
   implicit val catalog = ddfManager.catalog
-  var connection = ddfManager.getConnection()
-
 
   def getConnection() : Connection = {
-    connection = ddfManager.getConnection()
-    connection
+    ddfManager.getConnection()
   }
 
   override def sql2ddf(command: String): DDF = {

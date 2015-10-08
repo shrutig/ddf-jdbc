@@ -83,7 +83,8 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
 
     // check for valid jdbc login information
     // in case of sfdc
-    val try_connect = Try(pool.getConnection.createStatement().execute("SELECT 1"))
+    val conn = pool.getConnection
+    val try_connect = Try(conn.createStatement().execute("SELECT 1"))
     try_connect match {
       case Failure(ex) =>
         if (ex.getMessage.contains("INVALID_LOGIN")) {
@@ -93,6 +94,8 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
 
       case Success(_) => // Can execute query, good!!!
     }
+
+    conn.close()
 
     pool
   }
