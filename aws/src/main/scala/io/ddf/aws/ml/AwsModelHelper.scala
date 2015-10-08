@@ -130,3 +130,4 @@ object AwsModelHelper {
     predicResult.getPrediction.getPredictedValue.toDouble
   }
 }
+
