@@ -13,7 +13,26 @@ import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
+
 class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
+
+  // TODO: make the genTableName a sperate class to reuse.
+  val possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+  val possibleText = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+  def genTableName(length: Int) = {
+    def random(possible: String) = possible.charAt(Math.floor(Math.random() * possible.length).toInt)
+    val text = new StringBuffer
+    var i = 0
+    while (i < length) {
+      if (i == 0)
+        text.append(random(possibleText))
+      else
+        text.append(random(possible))
+      i = i + 1
+    }
+    text.toString
+  }
 
   @throws(classOf[DDFException])
   override def setFactorLevelsForStringColumns(xCols: Array[String]) {
@@ -46,14 +65,16 @@ class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
 
     //loop through all factors and compute factor
 
-    //(select * from hung_test) tmp
-    val table_name = s"${this.getDDF.getTableName} ) tmp"
+    val table_name = if (this.getDDF.getIsDDFView)
+                      s"(${this.getDDF.getTableName}) " + genTableName(8)
+                     else
+                      s"${this.getDDF.getTableName} "
     columnIndexes.par.foreach( colIndex => {
       val col = this.getColumn(this.getColumnName(colIndex))
 	  
       val quotedColName = "\"" + col.getName() + "\""
       val command = s"select ${quotedColName}, count(${quotedColName}) from " +
-        s"($table_name group by ${quotedColName}"
+        s"$table_name group by ${quotedColName}"
 
       val sqlResult = this.getManager.sql(command,"" )
       //JMap[String, Integer]

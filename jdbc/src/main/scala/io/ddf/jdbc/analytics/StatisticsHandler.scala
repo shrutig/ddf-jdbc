@@ -18,6 +18,23 @@ import scala.util.Try
 
 class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
 
+  val possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+  val possibleText = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+  def genTableName(length: Int) = {
+    def random(possible: String) = possible.charAt(Math.floor(Math.random() * possible.length).toInt)
+    val text = new StringBuffer
+    var i = 0
+    while (i < length) {
+      if (i == 0)
+        text.append(random(possibleText))
+      else
+        text.append(random(possible))
+      i = i + 1
+    }
+    text.toString
+  }
+
   val ddfManager: JdbcDDFManager = ddf.getManager.asInstanceOf[JdbcDDFManager]
   implicit val catalog = ddfManager.catalog
   //count all,sum,mean,variance,notNullCount,min,max
@@ -46,7 +63,10 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
       sqlCommand.add(String.format(SUMMARY_FUNCTIONS, column.getName, column.getName, column.getName, column.getName, column.getName, column.getName, column.getName))
     }
     var sql: String = StringUtils.join(sqlCommand, ", ")
-    val tableName = "(" + this.getDDF.getTableName + ") tmp"
+    val tableName = if (this.getDDF.getIsDDFView)
+      s"(${this.getDDF.getTableName}) " + genTableName(8)
+    else
+      s"${this.getDDF.getTableName} "
     sql = String.format("select %s from %s", sql,  tableName )
     val result = SqlArrayResultCommand(ddfManager.getConnection(), ddfManager
       .baseSchema, tableName, sql).result.get(0)
@@ -109,7 +129,11 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
     val categoricalColumns: util.List[Schema.Column] = this.getCategoricalColumns
     val simpleSummaries: util.List[SimpleSummary] = new util.ArrayList[SimpleSummary]
     categoricalColumns.foreach { column =>
-      val sqlCmd: String = String.format("select distinct(%s) from %s where %s is not null", column.getName, "(" + this.getDDF.getTableName + ") tmp", column.getName)
+      val table_name = if (this.getDDF.getIsDDFView)
+        s"(${this.getDDF.getTableName}) " + genTableName(8)
+      else
+        s"${this.getDDF.getTableName} "
+      val sqlCmd: String = String.format("select distinct(%s) from %s where %s is not null", column.getName, table_name, column.getName)
       val values: util.List[String] = ddf.getSqlHandler.sql(sqlCmd).getRows
       val summary: CategoricalSimpleSummary = new CategoricalSimpleSummary
       summary.setValues(values)
@@ -122,7 +146,10 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
       sqlCommand.add(String.format("min(%s), max(%s)", column.getName, column.getName))
     }
     var sql: String = StringUtils.join(sqlCommand, ", ")
-    val tableName = "(" + this.getDDF.getTableName + ") tmp"
+    val tableName = if (this.getDDF.getIsDDFView)
+      s"(${this.getDDF.getTableName}) " + genTableName(8)
+    else
+      s"${this.getDDF.getTableName} "
     sql = String.format("select %s from %s", sql, tableName)
     val result = SqlArrayResultCommand(ddfManager.getConnection(), ddfManager
       .baseSchema, tableName, sql).result.get(0)
