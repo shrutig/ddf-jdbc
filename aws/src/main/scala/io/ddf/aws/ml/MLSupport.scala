@@ -32,7 +32,23 @@ class MLSupport(ddf: DDF) extends  ADDFFunctionalGroupHandler(ddf) with ISupport
     awsModel.predictDataSource(ddf,datasourceId)
   }
 
- //TODO: getConfusionMatrix implementation
+  val SQL_1 = "CREATE TABLE ? AS SELECT ? FROM ? UNION SELECT ? FROM ?"
+  val SQL_2 = "SELECT COUNT(*) FROM ? WHERE ? < ? AND ? < ?"
+  val SQL_3 = "SELECT COUNT(*) FROM ? WHERE ? < ? AND ? > ?"
+  val SQL_4 = "SELECT COUNT(*) FROM ? WHERE ? > ? AND ? < ?"
+  val SQL_5 = "SELECT COUNT(*) FROM ? WHERE ? > ? AND ? > ?"
+  val SQL_6 = "DROP TABLE ?"
+
+  def getConfusionMatrix(iModel: IModel, v: Double): Array[Array[Long]]={
+    //TODO
+    val prediction = applyModel(iModel)
+    val originalDDF = awsddf
+    //crossValidation.executeSQL()
+    //crossValidation.executeSQL()
+    new Array[Array[Long]](0)
+  }
+
+
   val awsddf = ddf.asInstanceOf[JdbcDDF]
   val crossValidation: CrossValidation = new CrossValidation(awsddf)
 

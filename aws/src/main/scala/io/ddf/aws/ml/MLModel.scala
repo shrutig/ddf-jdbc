@@ -10,6 +10,7 @@ class MLModel(rawModel: Object) extends io.ddf.ml.Model(rawModel) {
 
   val SQL_REGRESSION = "CREATE TABLE ? (score float8)"
   val SQL_BINARY = "CREATE TABLE ? (bestAnswer int4,score float8)"
+  //TODO:Decide to include or not as columns cannot be made directly into table
   val SQL_ClASSIFICATION = "CREATE TABLE ? ();"
 
   def predict(ddf:DDF,var1:Array[Double]):Double ={

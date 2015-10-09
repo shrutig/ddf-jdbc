@@ -76,6 +76,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     // This is for pushing prepared statements to Postgres server as in
     // https://jdbc.postgresql.org/documentation/head/server-prepare.html
     //config.addDataSourceProperty("prepareThreshold", 0)
+    config.setConnectionTestQuery("SHOW TABLES")
     new HikariDataSource(config);
   }
 
