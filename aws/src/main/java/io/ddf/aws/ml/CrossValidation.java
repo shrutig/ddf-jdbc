@@ -4,19 +4,14 @@ import io.ddf.DDF;
 import io.ddf.aws.AWSDDFManager;
 import io.ddf.content.Schema;
 import io.ddf.exception.DDFException;
-import io.ddf.jdbc.JdbcDDF;
-import io.ddf.jdbc.content.Representations;
-import io.ddf.jdbc.content.Representations$;
 import io.ddf.jdbc.content.TableNameRepresentation;
-import io.ddf.jdbc.etl.SqlHandler;
-import io.ddf.misc.Config;
+
 import io.ddf.ml.CrossValidationSet;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 public class CrossValidation {
     private Date date = new Date();
@@ -37,7 +32,7 @@ public class CrossValidation {
     private String SQL = "CREATE TABLE ? AS SELECT * FROM ? ORDER BY RANDOM() LIMIT ?";
     private String SQL_CVK = "CREATE TABLE ? AS SELECT * FROM ? LIMIT ? OFFSET ?";
     private float TRAIN = 0.7f;
-    private float TEST = 0.7f;
+    private float TEST = 0.3f;
 
     public List<CrossValidationSet> CVRandom(int k, double trainingSize, long seed) throws DDFException {
         List<CrossValidationSet> finalDDFlist = new ArrayList<CrossValidationSet>();

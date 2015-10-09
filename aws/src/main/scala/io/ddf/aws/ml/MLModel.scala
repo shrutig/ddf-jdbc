@@ -25,9 +25,8 @@ class MLModel(rawModel: Object) extends io.ddf.ml.Model(rawModel) {
       case "CLASSIFICATION" => getDDF(SQL_ClASSIFICATION, tableName, ddf)
       case "REGRESSION" => getDDF(SQL_REGRESSION, tableName, ddf)
     }
-    AwsModelHelper.copyFromS3(ddf, Config.getValue(ddf.getEngine,
-      "s3outputUrl") + "/batch-prediction/result/" + rawModel.toString + ".gz", Config.getValue(ddf.getEngine, "region"),
-    tableName)
+    AwsModelHelper.copyFromS3(ddf, AwsModelHelper.getNewManifestPath(rawModel.toString),
+      Config.getValue(ddf.getEngine, "region"), tableName,true)
     newDDF
   }
 

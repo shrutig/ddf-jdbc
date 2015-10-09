@@ -1,6 +1,6 @@
 package io.ddf.aws.ml
 
-import java.io.File
+import java.io.{FileWriter, BufferedWriter, InputStream, File}
 import java.sql.{PreparedStatement, Connection}
 
 import com.amazonaws.auth.BasicAWSCredentials
@@ -28,13 +28,19 @@ object AwsModelHelper {
   val ML_ROLE_ARN = "mlRoleArn"
   val SQL_COPY = "COPY ? from ? region ? credentials " +
     " \'aws_access_key_id=?;aws_secret_access_key=?\' delimiter ',' ;"
+  val SQL_COPY_MANIFEST = "COPY ? from ? region ? credentials " +
+    " \'aws_access_key_id=?;aws_secret_access_key=?\' manifest delimiter ',' ;"
 
-  def copyFromS3(ddf: DDF, s3Source: String, region: String, tableName: String) = {
+  def copyFromS3(ddf: DDF, s3Source: String, region: String, tableName: String,isManifest:Boolean) = {
     var connection: Connection = null
     var preparedStatement: PreparedStatement = null
     try {
       connection = ddf.getManager.asInstanceOf[AWSDDFManager].getConnection
-      preparedStatement = connection.prepareStatement(SQL_COPY)
+      val sql = isManifest match {
+        case true => SQL_COPY_MANIFEST
+        case false => SQL_COPY
+      }
+      preparedStatement = connection.prepareStatement(sql)
       preparedStatement.setString(1, tableName)
       preparedStatement.setString(2, s3Source)
       preparedStatement.setString(3, region)
@@ -53,6 +59,38 @@ object AwsModelHelper {
       if (connection != null)
         connection.close()
     }
+  }
+
+  def getNewManifestPath(batchId: String):String = {
+    val oldManifest = getObject(batchId)
+    val modifiedManifest:String = oldManifest.trim.stripPrefix("{").stripSuffix("}").split(",") map(u => u
+      .split(":")(1)) map (u => "{\"url\":"+"\""+u+"\"},")  mkString("")
+    val newManifest = "{\"entries\":[" + modifiedManifest  .stripSuffix(",") + "]}"
+    val fileName = Identifiers.newManifestId
+    val file = new File(fileName)
+    val bw = new BufferedWriter(new FileWriter(file))
+    bw.write(newManifest)
+    bw.close()
+    uploadToS3(fileName,Config.getValue(AWS, "key")+fileName+".manifest",Config.getValue(AWS,
+      "bucketName"))
+    Config.getValue(AWS, "key")+fileName+".manifest"
+  }
+
+  lazy val s3Client = new AmazonS3Client(credentials)
+
+  def uploadToS3(filePath:String , fileId: String,bucketName:String) {
+    val s3Client = new AmazonS3Client(credentials)
+    val  file = new File(filePath)
+    val objectRequest = new PutObjectRequest(bucketName, fileId, file)
+    s3Client.putObject(objectRequest)
+  }
+
+  def getObject(batchId: String): String = {
+    val obj: InputStream = s3Client.getObject(Config.getValue(AWS, "bucketName"), Config.getValue(AWS, "key")
+      + "/batch-prediction/result" + batchId + ".manifest") getObjectContent()
+    val str = Source.fromInputStream(obj).mkString
+    obj.close()
+    str
   }
 
   def createDataSourceFromRedShift(sqlQuery: String): String = {

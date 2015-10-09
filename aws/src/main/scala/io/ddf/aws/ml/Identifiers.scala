@@ -25,6 +25,8 @@ object Identifiers {
   def newBatchPredictionId: String = generateEntityId("bp")
 
   def newTableName(model :String) :String = generateEntityId(model)
+
+  def newManifestId :String = generateEntityId("manifest")
 }
 /*
 "org.apache.spark" %% "spark-core" % "1.5.0",
