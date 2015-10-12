@@ -24,6 +24,13 @@ class PostgresDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineType:
     this.sql("set search_path to " + schemaName)
   }
 
+  override def showTables(schemaName: String): java.util.List[String] = {
+    val tables = catalog.showTables(getConnection(), schemaName)
+    val views = catalog.showViews(getConnection(), schemaName)
+    tables.removeAll(views)
+    tables
+  }
+
 }
 
 
@@ -59,11 +66,18 @@ object PostgresCatalog extends Catalog {
       schema = curSchema
     }
     val tables: util.List[String] = new util.ArrayList[String]
-    val metadata: DatabaseMetaData = connection.getMetaData
-    val rs: ResultSet = metadata.getTables(null, schema, null, Array("VIEW"))
-    while (rs.next()) {
-      tables.add(rs.getString("TABLE_NAME"))
+    var rs: ResultSet = null
+    try {
+      val metadata: DatabaseMetaData = connection.getMetaData
+      rs = metadata.getTables(null, schema, null, Array("VIEW"))
+      while (rs.next()) {
+        tables.add(rs.getString("TABLE_NAME"))
+      }
+    } finally {
+      if (rs != null) rs.close()
+      connection.close()
     }
+
     tables
   }
 
@@ -77,8 +91,6 @@ object PostgresCatalog extends Catalog {
     implicit val catalog = this
     val sqlResult = SqlArrayResultCommand(connection, "information_schema", "tables", sql)
     sqlResult.result.foreach(row => tables.add(row(0).toString))
-    val views = this.showViews(connection, schemaName)
-    tables.removeAll(views)
     tables
   }
 
@@ -99,23 +111,35 @@ object PostgresCatalog extends Catalog {
   override  def listColumnsForTable(connection: Connection, schemaName: String,
                                     tableName: String): util.List[Column] = {
     val columns: util.List[Column] = new util.ArrayList[Column]
-    val metadata: DatabaseMetaData = connection.getMetaData
-    val resultSet: ResultSet = metadata.getColumns(null, schemaName, tableName, null)
-    while (resultSet.next) {
-      val columnName = resultSet.getString(4)
-      var columnType = resultSet.getInt(5)
-      this.mLog.info("list columns: " + columnName + " " + columnType);
-      val column = new Column(columnName, Utils.getDDFType(columnType))
-      columns.add(column)
+    var resultSet:ResultSet = null
+    try {
+      val metadata: DatabaseMetaData = connection.getMetaData
+      resultSet = metadata.getColumns(null, schemaName, tableName, null)
+      while (resultSet.next) {
+        val columnName = resultSet.getString(4)
+        var columnType = resultSet.getInt(5)
+        this.mLog.info("list columns: " + columnName + " " + columnType);
+        val column = new Column(columnName, Utils.getDDFType(columnType))
+        columns.add(column)
+      }
+    } finally {
+      if (resultSet!= null) resultSet.close()
+      connection.close()
     }
     columns
   }
 
   override def showSchemas(connection: Connection): util.List[String] = {
-    val rs = connection.getMetaData.getSchemas()
+    var rs:ResultSet = null
     val schemas: util.List[String] = new util.ArrayList[String]()
-    while (rs.next()) {
-      schemas.add(rs.getString("TABLE_SCHEM"))
+    try {
+      rs = connection.getMetaData.getSchemas()
+      while (rs.next()) {
+        schemas.add(rs.getString("TABLE_SCHEM"))
+      }
+    } finally {
+      if (rs != null) rs.close()
+      connection.close()
     }
     schemas
   }
@@ -141,6 +165,9 @@ object PostgresCatalog extends Catalog {
       case "text"=> ColumnType.STRING
       case "date"=> ColumnType.DATE
       case "bool"=> ColumnType.BOOLEAN
+      case "character varying" =>ColumnType.STRING
+      case "numeric" =>ColumnType.DOUBLE
+      case "bigint" => ColumnType.BIGINT
     }
   }
 }

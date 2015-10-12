@@ -47,13 +47,18 @@ class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
     //loop through all factors and compute factor
 
     //(select * from hung_test) tmp
-    val table_name = s"${this.getDDF.getTableName} ) tmp"
+    val table_name = if(this.getDDF.getIsDDFView){
+      s"(${this.getDDF.getTableName}) " + TableNameGenerator.genTableName(8)
+    } else {
+      s"${this.getDDF.getTableName} "
+    }
+
     columnIndexes.par.foreach( colIndex => {
       val col = this.getColumn(this.getColumnName(colIndex))
 	  
       val quotedColName = "\"" + col.getName() + "\""
       val command = s"select ${quotedColName}, count(${quotedColName}) from " +
-        s"($table_name group by ${quotedColName}"
+        s"$table_name group by ${quotedColName}"
 
       val sqlResult = this.getManager.sql(command,"" )
       //JMap[String, Integer]

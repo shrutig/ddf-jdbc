@@ -235,17 +235,17 @@ trait ETLBehaviors extends BaseBehaviors {
       newddf3.getNumColumns should be(5)
       newddf3.getColumnName(4).toLowerCase should be("speed")
 
-//      val lcols = Lists.newArrayList("distance", "arrtime", "deptime")
-//      val s0: String = "new_col = if(arrdelay=15,1,0)"
-//      val s1: String = "new_col = if(arrdelay=15,1,0),v ~ (arrtime-deptime),distance/(arrtime-deptime)"
-//      val s2: String = "arr_delayed=if(arrdelay=\"yes\",1,0)"
-//      val s3: String = "origin_sfo = case origin when \'SFO\' then 1 else 0 end "
-//      val res1 = "(if(arrdelay=15,1,0)) as new_col,((arrtime-deptime)) as v,(distance/(arrtime-deptime))"
-//      val res2 = "(if(arrdelay=\"yes\",1,0)) as arr_delayed"
-//      val res3 = "(case origin when \'SFO\' then 1 else 0 end) as origin_sfo"
-//      DDFT.RToSqlUdf(s1) should be(res1)
-//      DDFT.RToSqlUdf(s2) should be(res2)
-//      DDFT.RToSqlUdf(s3) should be(res3)
+      //      val lcols = Lists.newArrayList("distance", "arrtime", "deptime")
+      //      val s0: String = "new_col = if(arrdelay=15,1,0)"
+      //      val s1: String = "new_col = if(arrdelay=15,1,0),v ~ (arrtime-deptime),distance/(arrtime-deptime)"
+      //      val s2: String = "arr_delayed=if(arrdelay=\"yes\",1,0)"
+      //      val s3: String = "origin_sfo = case origin when \'SFO\' then 1 else 0 end "
+      //      val res1 = "(if(arrdelay=15,1,0)) as new_col,((arrtime-deptime)) as v,(distance/(arrtime-deptime))"
+      //      val res2 = "(if(arrdelay=\"yes\",1,0)) as arr_delayed"
+      //      val res3 = "(case origin when \'SFO\' then 1 else 0 end) as origin_sfo"
+      //      DDFT.RToSqlUdf(s1) should be(res1)
+      //      DDFT.RToSqlUdf(s2) should be(res2)
+      //      DDFT.RToSqlUdf(s3) should be(res3)
 
     }
   }
@@ -264,9 +264,8 @@ trait ETLBehaviors extends BaseBehaviors {
       val summaries = ddf.getSummary
       summaries.head.max() should be(2010)
 
-      //mean:1084.26 stdev:999.14 var:998284.8 cNA:0 count:31 min:4.0 max:3920.0
-      val randomSummary = summaries(8)
-      assert(randomSummary.variance() >= 998284)
+      val randomSummary = summaries(6)
+      randomSummary.variance() should be(260747.76 +- 1.0)
     }
 
     it should "run a simple sql command" in {

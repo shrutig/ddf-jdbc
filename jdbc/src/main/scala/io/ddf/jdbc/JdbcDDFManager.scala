@@ -20,24 +20,27 @@ import io.ddf.{DDF, DDFManager}
 import io.ddf.DDFManager.EngineType
 import scalikejdbc.ConnectionPool
 
+import scala.util.{Success, Failure, Try}
+
 class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
                      engineType: EngineType) extends DDFManager {
 
   override def getEngine: String = engineType.name()
-
+  this.setEngineType(engineType)
+  this.setDataSourceDescriptor(dataSourceDescriptor)
   def catalog: Catalog = SimpleCatalog
 
   val driverClassName = Config.getValue(getEngine, "jdbcDriverClass")
   Class.forName(driverClassName)
-
+  addRTK()
   var connectionPool = initializeConnectionPool(getEngine)
 
   val baseSchema = Config.getValue(getEngine, "workspaceSchema")
-  val canCreateView = Config.getValue(getEngine, "canCreateView")
-    .equalsIgnoreCase("yes")
+  val canCreateView = "yes".equalsIgnoreCase(Config.getValue(getEngine, "canCreateView"))
+
   setEngineType(engineType)
   setDataSourceDescriptor(dataSourceDescriptor)
-  addRTK()
+
 
   def addRTK(): Unit = {
     var jdbcUrl = dataSourceDescriptor.getDataSourceUri.getUri.toString
@@ -50,7 +53,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
       this.getDataSourceDescriptor.getDataSourceUri().setUri(new URI(jdbcUrl));
     }
   }
-  
+
   def isSinkAllowed = baseSchema != null
 
 
@@ -73,13 +76,31 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     config.setMaximumPoolSize(if (Config.getValue(getEngine, "maxJDBCPoolSize") == null) 15 else Config.getValue(getEngine, "maxJDBCPoolSize").toInt)
     config.setPoolName(getUUID.toString)
     config.setRegisterMbeans(true)
+    val connectionTestQuery = Config.getValue(getEngine, "jdbcConnectionTestQuery")
+    if(connectionTestQuery!=null) config.setConnectionTestQuery(connectionTestQuery)
     // This is for pushing prepared statements to Postgres server as in
     // https://jdbc.postgresql.org/documentation/head/server-prepare.html
     //config.addDataSourceProperty("prepareThreshold", 0)
-    config.setConnectionTestQuery("SHOW TABLES")
-    new HikariDataSource(config);
-  }
+    val pool: HikariDataSource = new HikariDataSource(config)
 
+    // check for valid jdbc login information
+    // in case of sfdc
+    val conn = pool.getConnection
+    val try_connect = Try(conn.createStatement().execute("SELECT 1"))
+    try_connect match {
+      case Failure(ex) =>
+        if (ex.getMessage.contains("INVALID_LOGIN")) {
+          pool.shutdown()
+          throw ex
+        }
+
+      case Success(_) => // Can execute query, good!!!
+    }
+
+    conn.close()
+
+    pool
+  }
   def getConnection(): Connection = {
     connectionPool.getConnection
   }
@@ -130,7 +151,6 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
   def checkSinkAllowed(): Unit = {
     if (!isSinkAllowed) throw new DDFException("Cannot load table into database as workSpace is not configured")
   }
-
   def getColumnInfo(sampleData: List[Array[String]],
                     hasHeader: Boolean = false,
                     doPreferDouble: Boolean = true): Array[Schema.Column] = {
@@ -162,7 +182,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     throw new DDFException("Load DDF from file is not supported!")
   }
 
-  override def getOrRestoreDDF(uuid: UUID): DDF = null
+  override def getOrRestoreDDF(uuid: UUID): DDF = getDDF(uuid)
 
 
   def showTables(schemaName: String): java.util.List[String] = {
@@ -180,7 +200,6 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
   def showDatabases(): java.util.List[String] = {
     catalog.showDatabases(getConnection())
   }
-
   def setDatabase(database: String) : Unit = {
     catalog.setDatabase(getConnection(), database)
   }

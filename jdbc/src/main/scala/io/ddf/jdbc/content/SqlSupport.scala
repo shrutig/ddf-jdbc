@@ -1,7 +1,7 @@
 package io.ddf.jdbc.content
 
 import java.io.FileReader
-import java.sql.{ResultSet, Connection}
+import java.sql.{Statement, ResultSet, Connection}
 import java.text.SimpleDateFormat
 import java.util
 import java.util.Date
@@ -34,39 +34,45 @@ object SqlCommand {
     }
 
     // Use prepareStatement to get metadata even when the resultset is empty
-    val rs: ResultSet = connection.createStatement().executeQuery(command)
-
-    // Get schema info
-    val md = rs.getMetaData
-    val colCount = md.getColumnCount
-    val columns: Array[Column] = new Array[Column](colCount)
-    var colIdx = 0
-    while (colIdx < colCount) {
-      //resultset in jdbc start at 1
-      val rsIdx = colIdx + 1
-      val colName = md.getColumnName(rsIdx)
-      val colType = md.getColumnType(rsIdx)
-      columns(colIdx) = new Column(colName, Utils.getDDFType(colType))
-      colIdx += 1
-    }
-    schema.setColumns(columns.toList.asJava)
-
-    // Get data
+    var st: Statement = null
+    var rs: ResultSet = null
     var list = new ListBuffer[String]()
-    while(rs.next()) {
-      val row: Array[String] = new Array[String](colCount)
+    try {
+      st = connection.createStatement()
+      rs = st.executeQuery(command)
+
+      // Get schema info
+      val md = rs.getMetaData
+      val colCount = md.getColumnCount
+      val columns: Array[Column] = new Array[Column](colCount)
       var colIdx = 0
       while (colIdx < colCount) {
-        val obj = rs.getObject(colIdx+1)
-        row(colIdx) = if (obj == null) null else obj.toString
+        //resultset in jdbc start at 1
+        val rsIdx = colIdx + 1
+        val colName = md.getColumnName(rsIdx)
+        val colType = md.getColumnType(rsIdx)
+        columns(colIdx) = new Column(colName, Utils.getDDFType(colType))
         colIdx += 1
       }
-      val rowStr = row.mkString(separator)
-      list += rowStr
-    }
+      schema.setColumns(columns.toList.asJava)
 
-    rs.close()
-    connection.close()
+      // Get data
+      while(rs.next()) {
+        val row: Array[String] = new Array[String](colCount)
+        var colIdx = 0
+        while (colIdx < colCount) {
+          val obj = rs.getObject(colIdx+1)
+          row(colIdx) = if (obj == null) null else obj.toString
+          colIdx += 1
+        }
+        val rowStr = row.mkString(separator)
+        list += rowStr
+      }
+    } finally {
+      if (rs != null) rs.close()
+      st.close()
+      connection.close()
+    }
 
     val subList = if (maxRows < list.size) list.take(maxRows) else list
     new SqlResult(schema, subList)
@@ -104,6 +110,9 @@ object SqlArrayResultCommand {
       schema.setColumns(columns.toList.asJava)
       row
     }.list().apply
+
+    session.close()
+
     val subList = if (maxRows < list.size) list.take(maxRows) else list
     new SqlArrayResult(schema, subList)
   }
@@ -328,4 +337,24 @@ object Parsers extends RegexParsers with JavaTokenParsers {
     ("""(?i)\Q""" + kw.key + """\E""").r
   }
 
+}
+
+object TableNameGenerator{
+
+  val possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+  val possibleText = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+  def genTableName(length: Int) = {
+    def random(possible: String) = possible.charAt(Math.floor(Math.random() * possible.length).toInt)
+    val text = new StringBuffer
+    var i = 0
+    while (i < length) {
+      if (i == 0)
+        text.append(random(possibleText))
+      else
+        text.append(random(possible))
+      i = i + 1
+    }
+    text.toString
+  }
 }

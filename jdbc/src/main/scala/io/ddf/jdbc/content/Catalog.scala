@@ -58,7 +58,7 @@ object SimpleCatalog extends Catalog {
     tableName: String): util.List[Column] = {
     val columns: util.List[Column] = new util.ArrayList[Column]
     val metadata: DatabaseMetaData = connection.getMetaData
-    val resultSet: ResultSet = metadata.getColumns(null, schemaName, tableName, null)
+    val resultSet: ResultSet = metadata.getColumns(null, schemaName, tableName.toUpperCase, null)
     while (resultSet.next) {
       val columnName = resultSet.getString(4)
       var columnType = resultSet.getInt(5)
@@ -70,7 +70,11 @@ object SimpleCatalog extends Catalog {
   }
 
   override def setSchema(connection: Connection, schemaName: String): Unit = {
-    connection.setSchema(schemaName)
+    try {
+      connection.setSchema(schemaName)
+    }catch {
+      case _ => //do nothing
+    }
   }
 
   override def showTables(connection: Connection, schemaName: String): util.List[String] = {
@@ -140,7 +144,7 @@ object SimpleCatalog extends Catalog {
       case "varbinary"=>ColumnType.BINARY
       case "string" => ColumnType.STRING
       case whatever =>
-        this.mLog.info("try to find type: " + whatever)
+        log("try to find type: " + whatever)
         null
       //TODO: complete for other types
 

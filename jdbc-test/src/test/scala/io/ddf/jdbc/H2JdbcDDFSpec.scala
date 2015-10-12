@@ -1,7 +1,10 @@
 package io.ddf.jdbc
 
+import java.sql.Connection
+
 import io.ddf.DDFManager
 import io.ddf.DDFManager.EngineType
+import io.ddf.datasource.DataSourceDescriptor
 import io.ddf.jdbc.analytics.AnalyticsBehaviors
 import io.ddf.jdbc.content.ContentBehaviors
 import io.ddf.jdbc.etl.ETLBehaviors
@@ -10,7 +13,7 @@ import org.scalatest.FlatSpec
 class H2JdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors {
   implicit val loader = H2Loader
   it should behave like ddfWithAddressing
-  it should behave like ddfWithAggregationHandler
+  //TODO it should behave like ddfWithAggregationHandler
   it should behave like ddfWithStatisticsHandler
   it should behave like ddfWithBinningHandler
 
@@ -19,15 +22,15 @@ class H2JdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavio
   it should behave like ddfWithSchemaHandler
   it should behave like ddfWithViewHandler
 
-  it should behave like ddfWithBasicJoinSupport
+  //TODO it should behave like ddfWithBasicJoinSupport
   //  it should behave like ddfWithSemiJoinSupport - unsupported
   //  it should behave like ddfWithFullOuterJoinSupport - unsupported
   //  it should behave like ddfWithRightOuterJoinSupport - unsupported
   //  it should behave like ddfWithMissingDataFillSupport - unsupported
 
-  it should behave like ddfWithMissingDataDropSupport
+  //TODO it should behave like ddfWithMissingDataDropSupport
   it should behave like ddfWithSqlHandler
-  it should behave like ddfWithBasicTransformSupport
+  //TODO it should behave like ddfWithBasicTransformSupport
 
 }
 
@@ -41,5 +44,3 @@ object H2Loader extends Loader {
 
   override def jdbcDDFManager: JdbcDDFManager = ManagerFactory.jdbcDDFManager
 }
-
-
