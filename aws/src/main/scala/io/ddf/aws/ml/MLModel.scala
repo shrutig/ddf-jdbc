@@ -13,8 +13,8 @@ class MLModel(rawModel: Object) extends io.ddf.ml.Model(rawModel) {
   //TODO:Decide to include or not as columns cannot be made directly into table
   val SQL_ClASSIFICATION = "CREATE TABLE ? ();"
 
-  def predict(ddf:DDF,var1:Array[Double]):Double ={
-   AwsModelHelper.predict(ddf,var1,rawModel.toString)
+  def predict(ddf: DDF, var1: Array[Double]): Double = {
+    AwsModelHelper.predict(ddf, var1, rawModel.toString)
   }
 
   def predictDataSource(ddf: DDF, datasourceId: String): DDF = {
@@ -27,7 +27,7 @@ class MLModel(rawModel: Object) extends io.ddf.ml.Model(rawModel) {
       case "REGRESSION" => getDDF(SQL_REGRESSION, tableName, ddf)
     }
     AwsModelHelper.copyFromS3(ddf, AwsModelHelper.getNewManifestPath(rawModel.toString),
-      Config.getValue(ddf.getEngine, "region"), tableName,true)
+      Config.getValue(ddf.getEngine, "region"), tableName, true)
     newDDF
   }
 

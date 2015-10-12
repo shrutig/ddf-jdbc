@@ -5,18 +5,18 @@ import io.ddf.DDFManager.EngineType
 import io.ddf.jdbc.analytics.AnalyticsBehaviors
 import io.ddf.jdbc.content.ContentBehaviors
 import io.ddf.jdbc.etl.ETLBehaviors
-import io.ddf.jdbc.ml.MLBehaviors
 import io.ddf.jdbc.{EngineDescriptor, JdbcDDFManager, Loader}
+import io.ddf.postgres.PostgresDDFManager
 import org.scalatest.FlatSpec
 
-class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors with MLBehaviors{
+class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors{
   implicit val loader = AWSLoader
 
-  it should behave like ddfWithClassification
+  /*it should behave like ddfWithClassification
   it should behave like ddfWithBinary
-  it should behave like ddfWithBinary
+  it should behave like ddfWithBinary*/
 
-  it should behave like ddfWithAddressing
+  /*it should behave like ddfWithAddressing
   it should behave like ddfWithAggregationHandler
   it should behave like ddfWithStatisticsHandler
   it should behave like ddfWithBinningHandler
@@ -24,7 +24,7 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
   it should behave like ddfWithMetaDataHandler
   it should behave like ddfWithPersistenceHandler
   it should behave like ddfWithSchemaHandler
-  it should behave like ddfWithViewHandler
+  it should behave like ddfWithViewHandler*/
 
   it should behave like ddfWithBasicJoinSupport
   //it should behave like ddfWithSemiJoinSupport - unsupported
@@ -40,11 +40,11 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
 
 object ManagerFactory {
   val engineDescriptor = EngineDescriptor("aws")
-  val jdbcDDFManager = DDFManager.get(DDFManager.EngineType.AWS, engineDescriptor).asInstanceOf[JdbcDDFManager]
+  val jdbcDDFManager = DDFManager.get(DDFManager.EngineType.AWS, engineDescriptor).asInstanceOf[PostgresDDFManager]
 }
 
 object AWSLoader extends Loader {
-  override def engine: EngineType = DDFManager.EngineType.AWS
+  override def engine: EngineType = EngineType.AWS
 
   override def jdbcDDFManager: JdbcDDFManager = ManagerFactory.jdbcDDFManager
 

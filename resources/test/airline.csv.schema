@@ -1,0 +1,126 @@
+{
+  "excludedAttributeNames": [],
+  "version": "1.0",
+  "dataFormat": "CSV",
+  "rowId": null,
+  "dataFileContainsHeader": true,
+  "attributes": [
+    {
+      "attributeName": "year",
+      "attributeType": "NUMERIC"
+    },
+    {
+      "attributeName": "month",
+      "attributeType": "NUMERIC"
+    },
+    {
+      "attributeName": "dayofmonth",
+      "attributeType": "NUMERIC"
+    },
+    {
+      "attributeName": "dayofweek",
+      "attributeType": "NUMERIC"
+    },
+    {
+      "attributeName": "depTime",
+      "attributeType": "NUMERIC"
+    },
+    {
+      "attributeName": "crsdeptime",
+      "attributeType": "NUMERIC"
+    },
+    {
+      "attributeName": "arrtime",
+      "attributeType": "NUMERIC"
+    },
+    {
+      "attributeName": "crsarrtime",
+      "attributeType": "NUMERIC"
+    },
+    {
+       "attributeName": "uniquecarrier",
+       "attributeType": "CATEGORICAL"
+    },
+    {
+      "attributeName": "flightnum",
+      "attributeType": "NUMERIC"
+    },
+    {
+       "attributeName": "tailnum",
+       "attributeType": "CATEGORICAL"
+    },
+    {
+        "attributeName": "actualelapsedtime",
+        "attributeType": "NUMERIC"
+    },
+    {
+         "attributeName": "crselapsedtime",
+         "attributeType": "NUMERIC"
+    },
+    {
+         "attributeName": "airtime",
+         "attributeType": "NUMERIC"
+    },
+    {
+         "attributeName": "arrdelay",
+         "attributeType": "NUMERIC"
+    },
+    {
+      "attributeName": "depdelay",
+      "attributeType": "NUMERIC"
+    },
+    {
+       "attributeName": "origin",
+       "attributeType": "CATEGORICAL"
+    },
+    {
+      "attributeName": "dest",
+      "attributeType": "CATEGORICAL"
+    },
+    {
+       "attributeName": "distance",
+       "attributeType": "NUMERIC"
+    },
+    {
+       "attributeName": "taxiin",
+       "attributeType": "NUMERIC"
+    },
+    {
+        "attributeName": "taxiout",
+        "attributeType": "NUMERIC"
+    },
+    {
+        "attributeName": "cancelled",
+        "attributeType": "NUMERIC"
+    },
+    {
+        "attributeName": "cancellationcode",
+        "attributeType": "CATEGORICAl"
+    },
+    {
+        "attributeName": "diverted",
+        "attributeType": "CATEGORICAl"
+    },
+    {
+        "attributeName": "carrierdelay",
+        "attributeType": "NUMERIC"
+    },
+    {
+        "attributeName": "weatherdelay",
+        "attributeType": "NUMERIC"
+    },
+    {
+        "attributeName": "nasdelay",
+        "attributeType": "NUMERIC"
+    },
+    {
+        "attributeName": "securitydelay",
+        "attributeType": "NUMERIC"
+    },
+    {
+        "attributeName": "lateaircraftdelay",
+        "attributeType": "NUMERIC"
+    },
+  ],
+  "targetAttributeName": "depdelay"
+}

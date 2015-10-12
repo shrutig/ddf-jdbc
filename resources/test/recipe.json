@@ -1,0 +1,10 @@
+{
+  "outputs": [
+    "ALL_CATEGORICAL", 
+    "quantile_bin(depTime,15)",
+    "quantile_bin(depDelay,5)",
+    "quantile_bin(taxi,5)",
+    "quantile_bin(wheels,30)",
+    "quantile_bin(arrival,30)"
+  ]
+}

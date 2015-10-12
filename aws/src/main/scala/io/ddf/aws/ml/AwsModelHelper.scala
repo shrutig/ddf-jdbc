@@ -26,12 +26,13 @@ object AwsModelHelper {
   val DB_PASS = "dbPass"
   val ML_STAGE = "mlStage"
   val ML_ROLE_ARN = "mlRoleArn"
+  val SCHEMA = "dataSchema"
   val SQL_COPY = "COPY ? from ? region ? credentials " +
     " \'aws_access_key_id=?;aws_secret_access_key=?\' delimiter ',' ;"
   val SQL_COPY_MANIFEST = "COPY ? from ? region ? credentials " +
     " \'aws_access_key_id=?;aws_secret_access_key=?\' manifest delimiter ',' ;"
 
-  def copyFromS3(ddf: DDF, s3Source: String, region: String, tableName: String,isManifest:Boolean) = {
+  def copyFromS3(ddf: DDF, s3Source: String, region: String, tableName: String, isManifest: Boolean) = {
     var connection: Connection = null
     var preparedStatement: PreparedStatement = null
     try {
@@ -61,26 +62,26 @@ object AwsModelHelper {
     }
   }
 
-  def getNewManifestPath(batchId: String):String = {
+  def getNewManifestPath(batchId: String): String = {
     val oldManifest = getObject(batchId)
-    val modifiedManifest:String = oldManifest.trim.stripPrefix("{").stripSuffix("}").split(",") map(u => u
-      .split(":")(1)) map (u => "{\"url\":"+"\""+u+"\"},")  mkString("")
-    val newManifest = "{\"entries\":[" + modifiedManifest  .stripSuffix(",") + "]}"
+    val modifiedManifest: String = oldManifest.trim.stripPrefix("{").stripSuffix("}").split(",") map (u => u
+      .split(":")(1)) map (u => "{\"url\":" + "\"" + u + "\"},") mkString ("")
+    val newManifest = "{\"entries\":[" + modifiedManifest.stripSuffix(",") + "]}"
     val fileName = Identifiers.newManifestId
     val file = new File(fileName)
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write(newManifest)
     bw.close()
-    uploadToS3(fileName,Config.getValue(AWS, "key")+fileName+".manifest",Config.getValue(AWS,
+    uploadToS3(fileName, Config.getValue(AWS, "key") + fileName + ".manifest", Config.getValue(AWS,
       "bucketName"))
-    Config.getValue(AWS, "key")+fileName+".manifest"
+    Config.getValue(AWS, "key") + fileName + ".manifest"
   }
 
   lazy val s3Client = new AmazonS3Client(credentials)
 
-  def uploadToS3(filePath:String , fileId: String,bucketName:String) {
+  def uploadToS3(filePath: String, fileId: String, bucketName: String) {
     val s3Client = new AmazonS3Client(credentials)
-    val  file = new File(filePath)
+    val file = new File(filePath)
     val objectRequest = new PutObjectRequest(bucketName, fileId, file)
     s3Client.putObject(objectRequest)
   }
@@ -106,6 +107,7 @@ object AwsModelHelper {
       .withDatabaseCredentials(databaseCredentials)
       .withSelectSqlQuery(Config.getValue(AWS, sqlQuery))
       .withS3StagingLocation(Config.getValue(AWS, ML_STAGE))
+      .withDataSchema(Source.fromInputStream(getClass.getResourceAsStream(Config.getValue(AWS, SCHEMA))).mkString)
     val request = new CreateDataSourceFromRedshiftRequest()
       .withComputeStatistics(false)
       .withDataSourceId(entityId)
