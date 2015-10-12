@@ -65,7 +65,7 @@ trait ContentBehaviors extends BaseBehaviors {
       val manager: DDFManager = DDFManager.get(l.engine,l.jdbcDDFManager.getDataSourceDescriptor)
       val ddf: DDF = manager.newDDF
       val uri: PersistenceUri = ddf.persist
-      uri.getEngine should be(l.engine)
+      uri.getEngine should be(l.engine.toString)
       new File(uri.getPath).exists() should be(true)
       ddf.unpersist()
     }

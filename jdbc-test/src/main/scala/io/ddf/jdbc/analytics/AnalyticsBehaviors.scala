@@ -18,7 +18,7 @@ trait AnalyticsBehaviors extends BaseBehaviors {
       val res1 = ddf.aggregate("year, month, min(depdelay), max(arrdelay)")
       res1.size() should be(13)
       val aggregateResult = ddf.aggregate("year, month, avg(depdelay), stddev(arrdelay)")
-      val result: Array[Double] = aggregateResult.get("2010,3")
+      val result: Array[Double] = aggregateResult.get("2010\t3")
       result.length should be(2)
 
       val colAggregate = ddf.getAggregationHandler.aggregateOnColumn(AggregateFunction.MAX, "YEAR")
@@ -67,8 +67,8 @@ trait AnalyticsBehaviors extends BaseBehaviors {
       val summaries = ddf.getSummary
       summaries.head.max() should be(2010)
 
-      val randomSummary = summaries(8)
-      randomSummary.variance() should be(998284.8 +- 1.0)
+      val randomSummary = summaries(6)
+      randomSummary.variance() should be(260747.76 +- 1.0)
 
     }
     it should "calculate vector mean" in {

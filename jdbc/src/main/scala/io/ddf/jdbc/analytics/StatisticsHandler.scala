@@ -9,7 +9,7 @@ import io.ddf.content.Schema.Column
 import io.ddf.exception.DDFException
 import io.ddf.jdbc.JdbcDDFManager
 import io.ddf.jdbc.analytics.StatsUtils.{CovarianceCounter, Quantiles}
-import io.ddf.jdbc.content.{Representations, SqlArrayResult, SqlArrayResultCommand}
+import io.ddf.jdbc.content.{TableNameGenerator, Representations, SqlArrayResult, SqlArrayResultCommand}
 import org.apache.commons.lang.StringUtils
 
 import scala.collection.JavaConversions._
@@ -46,7 +46,11 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
       sqlCommand.add(String.format(SUMMARY_FUNCTIONS, column.getName, column.getName, column.getName, column.getName, column.getName, column.getName, column.getName))
     }
     var sql: String = StringUtils.join(sqlCommand, ", ")
-    val tableName = "(" + this.getDDF.getTableName + ") tmp"
+    val tableName = if(this.getDDF.getIsDDFView){
+      s"(${this.getDDF.getTableName}) " + TableNameGenerator.genTableName(8)
+    } else {
+      s"${this.getDDF.getTableName} "
+    }
     sql = String.format("select %s from %s", sql,  tableName )
     val result = SqlArrayResultCommand(ddfManager.getConnection(), ddfManager
       .baseSchema, tableName, sql).result.get(0)

@@ -36,8 +36,8 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
   var connectionPool = initializeConnectionPool(getEngine)
 
   val baseSchema = Config.getValue(getEngine, "workspaceSchema")
-  val canCreateView = Config.getValue(getEngine, "canCreateView")
-    .equalsIgnoreCase("yes")
+  val canCreateView = "yes".equalsIgnoreCase(Config.getValue(getEngine, "canCreateView"))
+
   setEngineType(engineType)
   setDataSourceDescriptor(dataSourceDescriptor)
 
@@ -76,6 +76,8 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     config.setMaximumPoolSize(if (Config.getValue(getEngine, "maxJDBCPoolSize") == null) 15 else Config.getValue(getEngine, "maxJDBCPoolSize").toInt)
     config.setPoolName(getUUID.toString)
     config.setRegisterMbeans(true)
+    val connectionTestQuery = Config.getValue(getEngine, "jdbcConnectionTestQuery")
+    if(connectionTestQuery!=null) config.setConnectionTestQuery(connectionTestQuery)
     // This is for pushing prepared statements to Postgres server as in
     // https://jdbc.postgresql.org/documentation/head/server-prepare.html
     //config.addDataSourceProperty("prepareThreshold", 0)
@@ -182,7 +184,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     throw new DDFException("Load DDF from file is not supported!")
   }
 
-  override def getOrRestoreDDF(uuid: UUID): DDF = null
+  override def getOrRestoreDDF(uuid: UUID): DDF = getDDF(uuid)
 
 
   def showTables(schemaName: String): java.util.List[String] = {

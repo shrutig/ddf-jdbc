@@ -338,3 +338,23 @@ object Parsers extends RegexParsers with JavaTokenParsers {
   }
 
 }
+
+object TableNameGenerator{
+
+  val possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+  val possibleText = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+  def genTableName(length: Int) = {
+    def random(possible: String) = possible.charAt(Math.floor(Math.random() * possible.length).toInt)
+    val text = new StringBuffer
+    var i = 0
+    while (i < length) {
+      if (i == 0)
+        text.append(random(possibleText))
+      else
+        text.append(random(possible))
+      i = i + 1
+    }
+    text.toString
+  }
+}

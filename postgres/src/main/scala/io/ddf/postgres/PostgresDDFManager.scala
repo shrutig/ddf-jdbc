@@ -163,6 +163,9 @@ object PostgresCatalog extends Catalog {
       case "text"=> ColumnType.STRING
       case "date"=> ColumnType.DATE
       case "bool"=> ColumnType.BOOLEAN
+      case "character varying" =>ColumnType.STRING
+      case "numeric" =>ColumnType.DOUBLE
+      case "bigint" => ColumnType.BIGINT
     }
   }
 }

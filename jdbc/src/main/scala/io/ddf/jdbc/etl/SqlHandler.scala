@@ -57,7 +57,7 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
     } else {
       if (this.ddfManager.getCanCreateView()) {
         this.getManager.log(">>> Creating view in database")
-        val viewName = genTableName(8)
+        val viewName = TableNameGenerator.genTableName(8)
         //View will allow select commands
         DdlCommand(getConnection(), baseSchema, "CREATE VIEW " + viewName + " AS (" +
           command + ")")
@@ -145,22 +145,6 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
     }
   }
 
-  val possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-  val possibleText = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-
-  def genTableName(length: Int) = {
-    def random(possible: String) = possible.charAt(Math.floor(Math.random() * possible.length).toInt)
-    val text = new StringBuffer
-    var i = 0
-    while (i < length) {
-      if (i == 0)
-        text.append(random(possibleText))
-      else
-        text.append(random(possible))
-      i = i + 1
-    }
-    text.toString
-  }
 
   override def sqlTyped(command: String): SqlTypedResult = new SqlTypedResult(sql(command))
 

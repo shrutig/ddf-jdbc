@@ -1,6 +1,7 @@
 package io.ddf.aws
 
 import io.ddf.DDFManager
+import io.ddf.DDFManager.EngineType
 import io.ddf.jdbc.analytics.AnalyticsBehaviors
 import io.ddf.jdbc.content.ContentBehaviors
 import io.ddf.jdbc.etl.ETLBehaviors

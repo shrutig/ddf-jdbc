@@ -99,7 +99,7 @@ class ViewHandler(ddf: DDF) extends io.ddf.content.ViewHandler(ddf) {
       i += 1;
     }
     mLog.info("Updated columns: " + Arrays.toString(columnExpr.toArray))
-    val table = s"(${this.getDDF.getTableName}) ${this.getDDF.getSqlHandler.asInstanceOf[SqlHandler].genTableName(8)}"
+    val table = s"(${this.getDDF.getTableName}) ${TableNameGenerator.genTableName(8)}"
     var sqlCmd: String = String.format("SELECT %s FROM %s", colNames.mkString(","), table)
     if (filter != null) {
       sqlCmd = String.format("%s WHERE %s", sqlCmd, filter.toSql)
