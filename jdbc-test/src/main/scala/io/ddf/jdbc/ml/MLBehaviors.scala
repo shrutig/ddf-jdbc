@@ -1,4 +1,4 @@
-package io.ddf.aws.ml
+package io.ddf.jdbc.ml
 
 import io.ddf.DDF
 import io.ddf.jdbc.{BaseBehaviors, Loader}
@@ -21,6 +21,7 @@ trait MLBehaviors extends BaseBehaviors {
   }
 
   def ddfWithBinary(implicit l:Loader):Unit = {
+
 
   }
 

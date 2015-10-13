@@ -1,7 +1,5 @@
 // These are needed even before build.scala
 
-resolvers += "sonatype-releases" at "https://oss.sonatype.org/content/repositories/releases/"
-
 resolvers += Resolver.url("artifactory", url("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases"))(Resolver.ivyStylePatterns)
 
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
@@ -15,8 +13,6 @@ addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.2.0")
 addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.5.1")
 
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.4")
-
-addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.7.0")
 
 //addSbtPlugin("io.spray" %% "sbt-twirl" % "0.6.1")
 

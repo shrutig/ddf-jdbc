@@ -53,7 +53,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
       this.getDataSourceDescriptor.getDataSourceUri().setUri(new URI(jdbcUrl));
     }
   }
-
+  
   def isSinkAllowed = baseSchema != null
 
 
@@ -101,6 +101,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
 
     pool
   }
+
   def getConnection(): Connection = {
     connectionPool.getConnection
   }
@@ -151,6 +152,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
   def checkSinkAllowed(): Unit = {
     if (!isSinkAllowed) throw new DDFException("Cannot load table into database as workSpace is not configured")
   }
+
   def getColumnInfo(sampleData: List[Array[String]],
                     hasHeader: Boolean = false,
                     doPreferDouble: Boolean = true): Array[Schema.Column] = {
@@ -200,6 +202,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
   def showDatabases(): java.util.List[String] = {
     catalog.showDatabases(getConnection())
   }
+
   def setDatabase(database: String) : Unit = {
     catalog.setDatabase(getConnection(), database)
   }

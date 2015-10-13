@@ -6,17 +6,12 @@ import io.ddf.jdbc.analytics.AnalyticsBehaviors
 import io.ddf.jdbc.content.ContentBehaviors
 import io.ddf.jdbc.etl.ETLBehaviors
 import io.ddf.jdbc.{EngineDescriptor, JdbcDDFManager, Loader}
-import io.ddf.postgres.PostgresDDFManager
 import org.scalatest.FlatSpec
 
-class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors{
+class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors {
   implicit val loader = AWSLoader
 
-  /*it should behave like ddfWithClassification
-  it should behave like ddfWithBinary
-  it should behave like ddfWithBinary*/
-
-  /*it should behave like ddfWithAddressing
+  it should behave like ddfWithAddressing
   it should behave like ddfWithAggregationHandler
   it should behave like ddfWithStatisticsHandler
   it should behave like ddfWithBinningHandler
@@ -24,15 +19,15 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
   it should behave like ddfWithMetaDataHandler
   it should behave like ddfWithPersistenceHandler
   it should behave like ddfWithSchemaHandler
-  it should behave like ddfWithViewHandler*/
+  it should behave like ddfWithViewHandler
 
-  it should behave like ddfWithBasicJoinSupport
+  it should behave like ddfWithBasicJoinSupport //-not passed
   //it should behave like ddfWithSemiJoinSupport - unsupported
-  it should behave like ddfWithFullOuterJoinSupport
-  it should behave like ddfWithRightOuterJoinSupport
+  it should behave like ddfWithFullOuterJoinSupport //-fail
+  it should behave like ddfWithRightOuterJoinSupport //-fail
   it should behave like ddfWithMissingDataFillSupport
   it should behave like ddfWithMissingDataDropSupport
-  it should behave like ddfWithSqlHandler
+  it should behave like ddfWithSqlHandler //-fail
   it should behave like ddfWithBasicTransformSupport
 
 
@@ -40,11 +35,11 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
 
 object ManagerFactory {
   val engineDescriptor = EngineDescriptor("aws")
-  val jdbcDDFManager = DDFManager.get(DDFManager.EngineType.AWS, engineDescriptor).asInstanceOf[PostgresDDFManager]
+  val jdbcDDFManager = DDFManager.get(DDFManager.EngineType.AWS, engineDescriptor).asInstanceOf[JdbcDDFManager]
 }
 
 object AWSLoader extends Loader {
-  override def engine: EngineType = EngineType.AWS
+  override def engine: EngineType = DDFManager.EngineType.AWS
 
   override def jdbcDDFManager: JdbcDDFManager = ManagerFactory.jdbcDDFManager
 

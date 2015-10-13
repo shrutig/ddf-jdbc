@@ -154,12 +154,10 @@ object PostgresCatalog extends Catalog {
     typeStr match {
       case "int4" => ColumnType.INT
       case "integer" => ColumnType.INT
-      case "int" => ColumnType.INT
       case "int8"=> ColumnType.BIGINT
       case "float4"=> ColumnType.FLOAT
       case "float8" => ColumnType.DOUBLE
       case "varchar"=> ColumnType.STRING
-      case "character varying" => ColumnType.STRING
       case "varchar2"=> ColumnType.STRING
       case "name"=> ColumnType.STRING
       case "text"=> ColumnType.STRING
