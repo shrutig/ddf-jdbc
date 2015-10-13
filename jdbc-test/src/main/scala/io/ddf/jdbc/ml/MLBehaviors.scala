@@ -4,7 +4,6 @@ import io.ddf.DDF
 import io.ddf.jdbc.{BaseBehaviors, Loader}
 import io.ddf.ml.IModel
 import org.scalatest.FlatSpec
-import io.ddf.aws.ml.MLModel
 
 trait MLBehaviors extends BaseBehaviors {
   this: FlatSpec =>
