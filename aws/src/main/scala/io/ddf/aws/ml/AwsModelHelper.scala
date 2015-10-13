@@ -10,9 +10,11 @@ import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.PutObjectRequest
 import io.ddf.DDF
 import io.ddf.aws.AWSDDFManager
+import io.ddf.content.Schema
 import io.ddf.misc.Config
 
 import scala.io.Source
+import scala.collection.JavaConverters._
 
 object AwsModelHelper {
   val PREFIX = "Scala aws ml"
@@ -146,6 +148,14 @@ object AwsModelHelper {
     evaluationId
   }
 
+  def getEvaluationParameters(evaluationId:String) ={
+    val request = new GetEvaluationRequest()
+    .withEvaluationId(evaluationId)
+
+    client.getEvaluation(request)
+  }
+
+
   def createBatchPrediction(mlModelId: String, dataSourceId: String, s3OutputUrl: String): String = {
     val batchPredictionId = Identifiers.newBatchPredictionId
     val bpRequest = new CreateBatchPredictionRequest()
@@ -169,5 +179,10 @@ object AwsModelHelper {
     val predicResult = client.predict(prediction)
     predicResult.getPrediction.getPredictedValue.toDouble
   }
+
+  /*def getSchemaAttributeDataSource(schema:Schema):String={
+    val columns:java.util.List[Schema.Column] = schema.getColumns
+    columns.asScala map (u => u.getName)
+  }*/
 }
 

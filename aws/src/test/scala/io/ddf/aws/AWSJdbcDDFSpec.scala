@@ -21,13 +21,13 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
   it should behave like ddfWithSchemaHandler
   it should behave like ddfWithViewHandler
 
-  it should behave like ddfWithBasicJoinSupport //-not passed
+  it should behave like ddfWithBasicJoinSupport
   //it should behave like ddfWithSemiJoinSupport - unsupported
-  it should behave like ddfWithFullOuterJoinSupport //-fail
-  it should behave like ddfWithRightOuterJoinSupport //-fail
+  it should behave like ddfWithFullOuterJoinSupport
+  it should behave like ddfWithRightOuterJoinSupport
   it should behave like ddfWithMissingDataFillSupport
   it should behave like ddfWithMissingDataDropSupport
-  it should behave like ddfWithSqlHandler //-fail
+  it should behave like ddfWithSqlHandler
   it should behave like ddfWithBasicTransformSupport
 
 

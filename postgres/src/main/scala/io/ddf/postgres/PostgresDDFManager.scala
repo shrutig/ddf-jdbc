@@ -157,6 +157,8 @@ object PostgresCatalog extends Catalog {
       case "int8"=> ColumnType.BIGINT
       case "float4"=> ColumnType.FLOAT
       case "float8" => ColumnType.DOUBLE
+      case "int" => ColumnType.INT
+      case "double precision" => ColumnType.DOUBLE
       case "varchar"=> ColumnType.STRING
       case "varchar2"=> ColumnType.STRING
       case "name"=> ColumnType.STRING
