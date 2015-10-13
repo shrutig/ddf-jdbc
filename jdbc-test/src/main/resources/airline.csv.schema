@@ -95,11 +95,11 @@
     },
     {
         "attributeName": "cancellationcode",
-        "attributeType": "CATEGORICAl"
+        "attributeType": "CATEGORICAL"
     },
     {
         "attributeName": "diverted",
-        "attributeType": "CATEGORICAl"
+        "attributeType": "CATEGORICAL"
     },
     {
         "attributeName": "carrierdelay",

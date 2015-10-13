@@ -11,7 +11,7 @@ object Identifiers {
 
   private def generateEntityId(prefix: String): String = {
     val rand = List.fill(11)(base62RandomChar()).mkString
-    s"$prefix-$rand"
+    s"$prefix$rand"
   }
   def representation():Array[Class[TableNameRepresentation]]={
     Array(Representations.VIEW)
@@ -24,7 +24,9 @@ object Identifiers {
 
   def newBatchPredictionId: String = generateEntityId("bp")
 
-  def newTableName(model :String) :String = generateEntityId(model)
+  def newTableName(model :String) :String = generateEntityId("tb"+model)
+
+  def newFileId :String = generateEntityId("file")
 
   def newManifestId :String = generateEntityId("manifest")
 }

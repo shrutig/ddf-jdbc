@@ -24,11 +24,12 @@ object AwsModelHelper {
   val client = new AmazonMachineLearningClient(credentials)
   val JDBC_NAME = "jdbcName"
   val CLUSTER_NAME = "clusterName"
-  val DB_USER = "dbUser"
-  val DB_PASS = "dbPass"
+  val DB_USER = "jdbcUser"
+  val DB_PASS = "jdbcPassword"
   val ML_STAGE = "mlStage"
   val ML_ROLE_ARN = "mlRoleArn"
   val SCHEMA = "dataSchema"
+  val RECIPE = "recipe"
   val SQL_COPY = "COPY ? from ? region ? credentials " +
     " \'aws_access_key_id=?;aws_secret_access_key=?\' delimiter ',' ;"
   val SQL_COPY_MANIFEST = "COPY ? from ? region ? credentials " +
@@ -67,7 +68,7 @@ object AwsModelHelper {
   def getNewManifestPath(batchId: String): String = {
     val oldManifest = getObject(batchId)
     val modifiedManifest: String = oldManifest.trim.stripPrefix("{").stripSuffix("}").split(",") map (u => u
-      .split(":")(1)) map (u => "{\"url\":" + "\"" + u + "\"},") mkString ("")
+      .split(":")(1)) map (u => "{\"url\":" + "\"s3:" + u + "\"},") mkString ("")
     val newManifest = "{\"entries\":[" + modifiedManifest.stripSuffix(",") + "]}"
     val fileName = Identifiers.newManifestId
     val file = new File(fileName)
@@ -76,7 +77,8 @@ object AwsModelHelper {
     bw.close()
     uploadToS3(fileName, Config.getValue(AWS, "key") + fileName + ".manifest", Config.getValue(AWS,
       "bucketName"))
-    Config.getValue(AWS, "key") + fileName + ".manifest"
+    "s3://"+Config.getValue(AWS,
+      "bucketName")+"/"+Config.getValue(AWS, "key") + fileName + ".manifest"
   }
 
   lazy val s3Client = new AmazonS3Client(credentials)
@@ -89,6 +91,8 @@ object AwsModelHelper {
   }
 
   def getObject(batchId: String): String = {
+    /*val obj: InputStream = s3Client.getObject(Config.getValue(AWS, "bucketName"),"batch-prediction/" +
+      "bp-tnDZRqdDHxy" + ".manifest") getObjectContent()*/
     val obj: InputStream = s3Client.getObject(Config.getValue(AWS, "bucketName"), Config.getValue(AWS, "key")
       + "/batch-prediction/result" + batchId + ".manifest") getObjectContent()
     val str = Source.fromInputStream(obj).mkString
@@ -107,11 +111,12 @@ object AwsModelHelper {
     val dataSpec = new RedshiftDataSpec()
       .withDatabaseInformation(database)
       .withDatabaseCredentials(databaseCredentials)
-      .withSelectSqlQuery(Config.getValue(AWS, sqlQuery))
+      .withSelectSqlQuery(sqlQuery)
       .withS3StagingLocation(Config.getValue(AWS, ML_STAGE))
-      .withDataSchema(Source.fromInputStream(getClass.getResourceAsStream(Config.getValue(AWS, SCHEMA))).mkString)
+      .withDataSchema(Source.fromInputStream(getClass.getResourceAsStream(Config.getValue(AWS, SCHEMA)))
+      .mkString)
     val request = new CreateDataSourceFromRedshiftRequest()
-      .withComputeStatistics(false)
+      .withComputeStatistics(true)
       .withDataSourceId(entityId)
       .withDataSpec(dataSpec)
       .withRoleARN(Config.getValue(AWS, ML_ROLE_ARN))
@@ -148,13 +153,6 @@ object AwsModelHelper {
     evaluationId
   }
 
-  def getEvaluationParameters(evaluationId:String) ={
-    val request = new GetEvaluationRequest()
-    .withEvaluationId(evaluationId)
-
-    client.getEvaluation(request)
-  }
-
 
   def createBatchPrediction(mlModelId: String, dataSourceId: String, s3OutputUrl: String): String = {
     val batchPredictionId = Identifiers.newBatchPredictionId
@@ -180,9 +178,15 @@ object AwsModelHelper {
     predicResult.getPrediction.getPredictedValue.toDouble
   }
 
-  /*def getSchemaAttributeDataSource(schema:Schema):String={
-    val columns:java.util.List[Schema.Column] = schema.getColumns
-    columns.asScala map (u => u.getName)
-  }*/
+  def getSchemaAttributeDataSource(schema:Schema,target:String):String={
+    val columns:List[Schema.Column] = schema.getColumns.asScala.toList
+    val listColumns:List[(String,Schema.ColumnClass)]= columns map (u => (u.getName,u.getColumnClass))
+    val scheme = listColumns map (u => "{\"attributeName\":"+ "\""+u._1+"\","+
+      "\"attributeType\": \""+u._2+"\"\n    },") toString()
+    val newSchema ="{\n  \"excludedAttributeNames\": [],\n  \"version\": \"1.0\",\n " +
+      " \"dataFormat\": \"CSV\",\n  \"rowId\": null,\n  \"dataFileContainsHeader\": true,\n" +
+      "  \"attributes\": [" + scheme.stripSuffix(",") + "],\n  \"targetAttributeName\": \""+target+"\"\n}"
+    newSchema
+  }
 }
 

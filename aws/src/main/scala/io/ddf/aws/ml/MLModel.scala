@@ -14,43 +14,25 @@ class MLModel(rawModel: Object) extends io.ddf.ml.Model(rawModel) {
   val SQL_ClASSIFICATION = "CREATE TABLE ? ();"
 
   def predict(ddf: DDF, var1: Array[Double]): Double = {
-    AwsModelHelper.predict(ddf, var1, rawModel.toString)
+    AwsModelHelper.predict(ddf, var1, rawModel.asInstanceOf[List[String]](0))
   }
 
   def predictDataSource(ddf: DDF, datasourceId: String): DDF = {
-    val batchId = AwsModelHelper.createBatchPrediction(rawModel.toString, datasourceId, Config.getValue(ddf.getEngine,
-      "s3outputUrl"))
-    val tableName = Identifiers.newTableName(rawModel.toString)
-    val newDDF = rawModel.toString match {
-      case "BINARY" => getDDF(SQL_BINARY, tableName, ddf)
-      case "CLASSIFICATION" => getDDF(SQL_ClASSIFICATION, tableName, ddf)
-      case "REGRESSION" => getDDF(SQL_REGRESSION, tableName, ddf)
+    val batchId = AwsModelHelper.createBatchPrediction(rawModel.asInstanceOf[List[String]](0), datasourceId,
+      Config.getValue(ddf.getEngine, "s3outputUrl"))
+    val tableName = Identifiers.newTableName(rawModel.asInstanceOf[List[String]](0))
+    val newDDF = rawModel.asInstanceOf[List[String]](1) match {
+      case "BINARY" => getDDF(s"CREATE TABLE $tableName (bestAnswer int4,score float8)", ddf)
+      case "CLASSIFICATION" => getDDF(s"CREATE TABLE ? (score float8)",  ddf)
+      case "REGRESSION" => getDDF(s"CREATE TABLE $tableName (score float8)", ddf)
     }
-    AwsModelHelper.copyFromS3(ddf, AwsModelHelper.getNewManifestPath(rawModel.toString),
+    AwsModelHelper.copyFromS3(ddf, AwsModelHelper.getNewManifestPath(rawModel.asInstanceOf[List[String]](0)),
       Config.getValue(ddf.getEngine, "region"), tableName, true)
     newDDF
   }
 
-  def getDDF(sql: String, table: String, ddf: DDF): DDF = {
-    var connection: Connection = null
-    var preparedStatement: PreparedStatement = null
-    try {
-      connection = ddf.getManager.asInstanceOf[AWSDDFManager].getConnection
-      preparedStatement = connection.prepareStatement(sql)
-      preparedStatement.setString(1, table)
-      val stmt = preparedStatement.toString
-      ddf.getManager.asInstanceOf[AWSDDFManager].create(stmt)
-    }
-    catch {
-      case e: Exception => {
-        throw new Exception("copy from S3 failed", e)
-      }
-    }
-    finally {
-      if (preparedStatement != null)
-        preparedStatement.close()
-      if (connection != null)
-        connection.close()
-    }
+  def getDDF(sql: String, ddf: DDF): DDF = {
+    ddf.getManager.asInstanceOf[AWSDDFManager].create(sql)
+
   }
 }

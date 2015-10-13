@@ -5,20 +5,21 @@ import com.amazonaws.services.machinelearning.model.MLModelType
 import io.ddf.DDF
 import io.ddf.jdbc.JdbcDDF
 import io.ddf.misc.{ADDFFunctionalGroupHandler, Config}
-import io.ddf.ml.{ CrossValidationSet, IModel, ISupportML, Model}
+import io.ddf.ml.{ CrossValidationSet, IModel, ISupportML}
 import java.{util,lang}
 import scala.reflect.runtime.{universe => ru}
 
 
-class MLSupport(ddf: DDF) extends  ADDFFunctionalGroupHandler(ddf) with ISupportML with Serializable {
+class MLSupporter(ddf: DDF) extends  ADDFFunctionalGroupHandler(ddf) with ISupportML with Serializable {
 
+  val RECIPE = "recipe"
   override def train(trainMethodKey: String, args: AnyRef*): IModel = {
     val sql = "SELECT * FROM " + ddf.getTableName
     val datasourceId = AwsModelHelper.createDataSourceFromRedShift(sql)
+    val arguments = if(args.isEmpty)null else args.asInstanceOf[java.util.Map[String, String]]
     val modelId = AwsModelHelper.createModel(datasourceId, Config.getValue(ddf.getEngine, "recipe"), MLModelType.valueOf
-      (trainMethodKey),
-      args.asInstanceOf[java.util.Map[String, String]])
-    new MLModel(modelId)
+      (trainMethodKey),arguments)
+    new MLModel(List(modelId,trainMethodKey))
   }
 
   override def applyModel(model: IModel): DDF = applyModel(model, true)
@@ -49,8 +50,8 @@ class MLSupport(ddf: DDF) extends  ADDFFunctionalGroupHandler(ddf) with ISupport
   }
 
 
-  val awsddf = ddf.asInstanceOf[JdbcDDF]
-  val crossValidation: CrossValidation = new CrossValidation(awsddf)
+  lazy val awsddf = ddf.asInstanceOf[JdbcDDF]
+  lazy val crossValidation: CrossValidation = new CrossValidation(awsddf)
 
   def CVRandom(k:Int, trainingSize: Double, seed: lang.Long): util.List[CrossValidationSet] = {
     crossValidation.CVRandom(k, trainingSize, seed)

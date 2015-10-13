@@ -6,7 +6,7 @@ import io.ddf.misc.{Config, ADDFFunctionalGroupHandler}
 import io.ddf.ml.{MLSupporter => CoreMLSupporter, _}
 
 
-class MLMetrics(ddf: DDF) extends AMLMetricsSupporter(ddf) {
+class MLMetrics(ddf: DDF) extends io.ddf.ml.AMLMetricsSupporter(ddf) {
 
   @throws(classOf[DDFException])
   override def r2score(meanYTrue: Double): Double = {
