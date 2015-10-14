@@ -10,11 +10,9 @@ import io.ddf.ml.CrossValidationSet;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class CrossValidation {
-    private Date date = new Date();
     private DDF ddf;
     private long rowCount;
     private AWSDDFManager awsddfManager;
@@ -29,20 +27,26 @@ public class CrossValidation {
         }
     }
 
-    private String SQL = "CREATE TABLE ? AS SELECT * FROM ? ORDER BY RANDOM() LIMIT ?";
-    private String SQL_CVK = "CREATE TABLE ? AS SELECT * FROM ? LIMIT ? OFFSET ?";
     private float TRAIN = 0.7f;
     private float TEST = 0.3f;
 
     public List<CrossValidationSet> CVRandom(int k, double trainingSize, long seed) throws DDFException {
         List<CrossValidationSet> finalDDFlist = new ArrayList<CrossValidationSet>();
-        long resultSize = rowCount / ((int) trainingSize);
+        if(trainingSize>=1 || trainingSize<=0)
+            throw new DDFException("CVRandom cannot be performed with the training size provided");
+        long resultSize = rowCount / k;
+
         for (int i = 0; i < k; i++) {
-            String tempView = "temp" + date.getTime() + i;
-            executeDDL(SQL, tempView + "test", (long) (resultSize * TEST), -1);
-            executeDDL(SQL, tempView + "train", (long) (resultSize * TRAIN), -1);
-            DDF trainDDF = create(tempView + "train");
-            DDF testDDF = create(tempView + "test");
+            String temp = Identifiers.newTableName("temp");
+            String sqlTest = String.format("CREATE TABLE %s AS SELECT * FROM %s ORDER BY RANDOM() LIMIT ?", temp +
+                    "test",ddf.getTableName());
+            String sqlTrain = String.format("CREATE TABLE %s AS SELECT * FROM %s ORDER BY RANDOM() LIMIT ?", temp+
+                    "train",ddf.getTableName());
+            executeDDL(sqlTest, (long) (resultSize * (1-trainingSize)), -1);
+            executeDDL(sqlTrain, (long) (resultSize * trainingSize), -1);
+
+            DDF trainDDF = create(temp + "train");
+            DDF testDDF = create(temp + "test");
             finalDDFlist.add(new CrossValidationSet(trainDDF, testDDF));
         }
         return finalDDFlist;
@@ -63,24 +67,26 @@ public class CrossValidation {
         List<CrossValidationSet> finalDDFlist = new ArrayList<CrossValidationSet>();
         long resultSize = rowCount / k;
         for (int i = 0; i < k; i++) {
-            String tempView = "temp" + date.getTime() + i;
-            executeDDL(SQL_CVK, tempView + "test", (long) (resultSize * TEST), i * resultSize);
-            executeDDL(SQL_CVK, tempView + "train", (long) (resultSize * TRAIN), (long) ((i + TEST) * resultSize));
-            DDF trainDDF = create(tempView + "train");
-            DDF testDDF = create(tempView + "test");
+            String temp = Identifiers.newTableName("temp");
+            String sqlTest = String.format("CREATE TABLE %s AS SELECT * FROM %s LIMIT ? OFFSET ?", temp +
+                    "test",ddf.getTableName());
+            String sqlTrain = String.format("CREATE TABLE %s AS SELECT * FROM %s LIMIT ? OFFSET ?", temp +
+                    "train",ddf.getTableName());
+            executeDDL(sqlTest,(long) (resultSize * TEST), i * resultSize);
+            executeDDL(sqlTrain,  (long) (resultSize * TRAIN), (long) ((i + TEST) * resultSize));
+            DDF trainDDF = create(temp + "train");
+            DDF testDDF = create(temp + "test");
             finalDDFlist.add(new CrossValidationSet(trainDDF, testDDF));
         }
         return finalDDFlist;
     }
 
-    public void executeDDL(String ddlString, String temp, long resultSize, long offset) {
+    public void executeDDL(String ddlString, long resultSize, long offset) {
         try (Connection conn = awsddfManager.getConnection();) {
             try (PreparedStatement stmt = conn.prepareStatement(ddlString);) {
-                stmt.setString(1, temp);
-                stmt.setString(2, ddf.getTableName());
-                stmt.setLong(3, resultSize);
-                if (offset > 0)
-                    stmt.setLong(4, offset);
+                stmt.setInt(1, (int)resultSize);
+                if (offset >= 0)
+                    stmt.setInt(2, (int)offset);
                 stmt.executeUpdate();
             } catch (SQLException exception) {
                 throw new RuntimeException(exception);

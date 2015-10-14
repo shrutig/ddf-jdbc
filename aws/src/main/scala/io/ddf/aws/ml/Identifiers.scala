@@ -24,7 +24,7 @@ object Identifiers {
 
   def newBatchPredictionId: String = generateEntityId("bp")
 
-  def newTableName(model :String) :String = generateEntityId("tb"+model)
+  def newTableName(name :String) :String = generateEntityId("tb"+name)
 
   def newFileId :String = generateEntityId("file")
 

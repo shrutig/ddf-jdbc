@@ -15,11 +15,11 @@ class MLSupporter(ddf: DDF) extends  ADDFFunctionalGroupHandler(ddf) with ISuppo
   val RECIPE = "recipe"
   override def train(trainMethodKey: String, args: AnyRef*): IModel = {
     val sql = "SELECT * FROM " + ddf.getTableName
-    val datasourceId = AwsModelHelper.createDataSourceFromRedShift(sql)
+    val datasourceId = AwsModelHelper.createDataSourceFromRedShift(ddf.getSchema,sql,trainMethodKey)
     val arguments = if(args.isEmpty)null else args.asInstanceOf[java.util.Map[String, String]]
     val modelId = AwsModelHelper.createModel(datasourceId, Config.getValue(ddf.getEngine, "recipe"), MLModelType.valueOf
       (trainMethodKey),arguments)
-    new MLModel(List(modelId,trainMethodKey))
+    new MLModel(Seq(modelId,trainMethodKey))
   }
 
   override def applyModel(model: IModel): DDF = applyModel(model, true)
@@ -28,8 +28,8 @@ class MLSupporter(ddf: DDF) extends  ADDFFunctionalGroupHandler(ddf) with ISuppo
 
   override def applyModel(model: IModel, hasLabels: Boolean, includeFeatures: Boolean): DDF = {
     val awsModel = model.asInstanceOf[MLModel]
-    val sql = "SELECT * FROM " + ddf.getTableName
-    val datasourceId = AwsModelHelper.createDataSourceFromRedShift(sql)
+    val sql = "SELECT * FROM " + ddf.getTableName + "limit 1"
+    val datasourceId = AwsModelHelper.createDataSourceFromRedShift(ddf.getSchema,sql,awsModel.getModelType)
     awsModel.predictDataSource(ddf,datasourceId)
   }
 

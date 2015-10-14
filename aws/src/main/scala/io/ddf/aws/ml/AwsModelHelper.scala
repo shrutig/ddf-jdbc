@@ -11,6 +11,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest
 import io.ddf.DDF
 import io.ddf.aws.AWSDDFManager
 import io.ddf.content.Schema
+import io.ddf.content.Schema.ColumnClass
 import io.ddf.misc.Config
 
 import scala.io.Source
@@ -30,26 +31,19 @@ object AwsModelHelper {
   val ML_ROLE_ARN = "mlRoleArn"
   val SCHEMA = "dataSchema"
   val RECIPE = "recipe"
-  val SQL_COPY = "COPY ? from ? region ? credentials " +
-    " \'aws_access_key_id=?;aws_secret_access_key=?\' delimiter ',' ;"
-  val SQL_COPY_MANIFEST = "COPY ? from ? region ? credentials " +
-    " \'aws_access_key_id=?;aws_secret_access_key=?\' manifest delimiter ',' ;"
 
   def copyFromS3(ddf: DDF, s3Source: String, region: String, tableName: String, isManifest: Boolean) = {
     var connection: Connection = null
     var preparedStatement: PreparedStatement = null
+    val id = Config.getValue(AWS, "accessId")
+    val key = Config.getValue(AWS, "accessKey")
+    val SQL_COPY = s"COPY $tableName from '$s3Source' credentials "
+    val accessInfo = s"'aws_access_key_id=$id;aws_secret_access_key=$key'"
+    val sql = if (isManifest) SQL_COPY + accessInfo + s" manifest  delimiter ',' REGION '$region' gzip IGNOREHEADER 1 ;"
+    else SQL_COPY + accessInfo + s" delimiter ',' REGION '$region';"
     try {
       connection = ddf.getManager.asInstanceOf[AWSDDFManager].getConnection
-      val sql = isManifest match {
-        case true => SQL_COPY_MANIFEST
-        case false => SQL_COPY
-      }
       preparedStatement = connection.prepareStatement(sql)
-      preparedStatement.setString(1, tableName)
-      preparedStatement.setString(2, s3Source)
-      preparedStatement.setString(3, region)
-      preparedStatement.setString(4, Config.getValue(AWS, "accessId"))
-      preparedStatement.setString(5, Config.getValue(AWS, "accessKey"))
       preparedStatement.executeUpdate()
     }
     catch {
@@ -66,9 +60,14 @@ object AwsModelHelper {
   }
 
   def getNewManifestPath(batchId: String): String = {
-    val oldManifest = getObject(batchId)
+    val obj: InputStream = s3Client.getObject(Config.getValue(AWS, "bucketName"), "batch-prediction/" +
+      "bp-tnDZRqdDHxy" + ".manifest") getObjectContent()
+    /*val obj: InputStream = s3Client.getObject(Config.getValue(AWS, "bucketName"), Config.getValue(AWS, "key")
+      + "/batch-prediction/result" + batchId + ".manifest") getObjectContent()*/
+    val oldManifest = Source.fromInputStream(obj).mkString
+    obj.close()
     val modifiedManifest: String = oldManifest.trim.stripPrefix("{").stripSuffix("}").split(",") map (u => u
-      .split(":")(1)) map (u => "{\"url\":" + "\"s3:" + u + "\"},") mkString ("")
+      .split("\":\"")(1)) filterNot (u => u.endsWith("tmp.gz\"")) map (u => "{\"url\":" + "\"" + u + "},") mkString
     val newManifest = "{\"entries\":[" + modifiedManifest.stripSuffix(",") + "]}"
     val fileName = Identifiers.newManifestId
     val file = new File(fileName)
@@ -77,8 +76,8 @@ object AwsModelHelper {
     bw.close()
     uploadToS3(fileName, Config.getValue(AWS, "key") + fileName + ".manifest", Config.getValue(AWS,
       "bucketName"))
-    "s3://"+Config.getValue(AWS,
-      "bucketName")+"/"+Config.getValue(AWS, "key") + fileName + ".manifest"
+    "s3://" + Config.getValue(AWS,
+      "bucketName") + "/" + Config.getValue(AWS, "key") + fileName + ".manifest"
   }
 
   lazy val s3Client = new AmazonS3Client(credentials)
@@ -90,17 +89,7 @@ object AwsModelHelper {
     s3Client.putObject(objectRequest)
   }
 
-  def getObject(batchId: String): String = {
-    /*val obj: InputStream = s3Client.getObject(Config.getValue(AWS, "bucketName"),"batch-prediction/" +
-      "bp-tnDZRqdDHxy" + ".manifest") getObjectContent()*/
-    val obj: InputStream = s3Client.getObject(Config.getValue(AWS, "bucketName"), Config.getValue(AWS, "key")
-      + "/batch-prediction/result" + batchId + ".manifest") getObjectContent()
-    val str = Source.fromInputStream(obj).mkString
-    obj.close()
-    str
-  }
-
-  def createDataSourceFromRedShift(sqlQuery: String): String = {
+  def createDataSourceFromRedShift(schema: Schema, sqlQuery: String,modelType:String): String = {
     val entityId = Identifiers.newDataSourceId
     val database = new RedshiftDatabase()
       .withDatabaseName(Config.getValue(AWS, JDBC_NAME))
@@ -113,8 +102,7 @@ object AwsModelHelper {
       .withDatabaseCredentials(databaseCredentials)
       .withSelectSqlQuery(sqlQuery)
       .withS3StagingLocation(Config.getValue(AWS, ML_STAGE))
-      .withDataSchema(Source.fromInputStream(getClass.getResourceAsStream(Config.getValue(AWS, SCHEMA)))
-      .mkString)
+      .withDataSchema(getSchemaAttributeDataSource(schema,modelType))
     val request = new CreateDataSourceFromRedshiftRequest()
       .withComputeStatistics(true)
       .withDataSourceId(entityId)
@@ -122,6 +110,24 @@ object AwsModelHelper {
       .withRoleARN(Config.getValue(AWS, ML_ROLE_ARN))
     client.createDataSourceFromRedshift(request)
     entityId
+  }
+
+  def getEvaluationMetrics(datasourceId:String,modelId:String,modelType: String):Double={
+    val evalId = Identifiers.newEvaluationId
+    val request = new CreateEvaluationRequest()
+    .withMLModelId(modelId)
+    .withEvaluationDataSourceId(datasourceId)
+    .withEvaluationId(evalId)
+    client.createEvaluation(request)
+    val metricRequest = new GetEvaluationRequest()
+    .withEvaluationId(evalId)
+    val parameter = modelType match {
+      case "BINARY" => "BinaryAUC"
+      case "REGRESSION" => "RegressionRMSE"
+    }
+    val answer = client.getEvaluation(metricRequest) .getPerformanceMetrics
+      .asInstanceOf[Map[String,String]] get parameter
+    answer.asInstanceOf[Double]
   }
 
   def createModel(trainDataSourceId: String, recipe: String, modelType: MLModelType, parameters: java.util.Map[String,
@@ -174,19 +180,41 @@ object AwsModelHelper {
     pair foreach (u => prediction.addRecordEntry(u._1.toString, u._2.toString))
     prediction.setMLModelId(modelId)
     prediction.setPredictEndpoint(predictEndPoint.getRealtimeEndpointInfo.getEndpointUrl)
-    val predicResult = client.predict(prediction)
-    predicResult.getPrediction.getPredictedValue.toDouble
+    val predictResult = client.predict(prediction)
+    predictResult.getPrediction.getPredictedValue.toDouble
   }
 
-  def getSchemaAttributeDataSource(schema:Schema,target:String):String={
-    val columns:List[Schema.Column] = schema.getColumns.asScala.toList
-    val listColumns:List[(String,Schema.ColumnClass)]= columns map (u => (u.getName,u.getColumnClass))
-    val scheme = listColumns map (u => "{\"attributeName\":"+ "\""+u._1+"\","+
-      "\"attributeType\": \""+u._2+"\"\n    },") toString()
-    val newSchema ="{\n  \"excludedAttributeNames\": [],\n  \"version\": \"1.0\",\n " +
+  def getSchemaAttributeDataSource(schema: Schema, modelType: String): String = {
+    val columns = schema.getColumns.asScala
+
+    val targetType = modelType match {
+      case "BINARY" => "BINARY"
+      case "MULTICLASS" => "CATEGORICAL"
+      case "REGRESSION" => "NUMERIC"
+    }
+
+    //val target = columns.last getName
+    val target = if(targetType equals "BINARY") "am" else "depdelay"
+    //TODO :change data, quick fix as current data does not have target at end
+
+    val listColumns = columns map (u => if (u.getName equalsIgnoreCase target) (target, targetType)
+      else (u.getName, attributeTypeFromColumnClass(u.getColumnClass)))
+    val attributes = listColumns.map { case (name, attrType) =>
+      "{\"attributeName\":" + "\"" + name + "\",\"attributeType\": \"" + attrType + "\"\n}"
+    }.mkString(",")
+    "{\n  \"excludedAttributeNames\": [],\n  \"version\": \"1.0\",\n " +
       " \"dataFormat\": \"CSV\",\n  \"rowId\": null,\n  \"dataFileContainsHeader\": true,\n" +
-      "  \"attributes\": [" + scheme.stripSuffix(",") + "],\n  \"targetAttributeName\": \""+target+"\"\n}"
-    newSchema
+      "  \"attributes\": [" + attributes + "],\n  \"targetAttributeName\": \"" + target + "\"\n}"
   }
+
+  def attributeTypeFromColumnClass(columnClass: ColumnClass): String = {
+    columnClass match {
+      case ColumnClass.LOGICAL => "BINARY"
+      case ColumnClass.NUMERIC => "NUMERIC"
+      case ColumnClass.FACTOR => "CATEGORICAL"
+      case ColumnClass.CHARACTER => "TEXT"
+    }
+  }
+
 }
 

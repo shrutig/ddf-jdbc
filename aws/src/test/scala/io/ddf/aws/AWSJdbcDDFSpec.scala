@@ -13,6 +13,9 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
   implicit val loader = AWSLoader
 
   it should behave like ddfWithRegression
+  it should behave like ddfWithBinary
+  it should behave like ddfWithCrossValidation
+  it should behave like ddfWithConfusionMatrix
 
   it should behave like ddfWithAddressing
   it should behave like ddfWithAggregationHandler
@@ -32,7 +35,6 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
   it should behave like ddfWithMissingDataDropSupport
   it should behave like ddfWithSqlHandler
   it should behave like ddfWithBasicTransformSupport
-
 }
 
 object ManagerFactory {
@@ -49,5 +51,6 @@ object AWSLoader extends Loader {
     jdbcDDFManager.drop("drop table if exists " + tableName + " cascade")
   }
 
-  override def MT_CARS_CREATE = "CREATE TABLE mtcars (mpg decimal,cyl int, disp decimal, hp int, drat decimal, wt decimal, qsec decimal, vs int, am int, gear int, carb int)"
+  override def MT_CARS_CREATE = "CREATE TABLE mtcars (mpg decimal,cyl int, disp decimal, hp int," +
+    " drat decimal, wt decimal, qsec decimal, vs int, am int, gear int, carb int)"
 }
