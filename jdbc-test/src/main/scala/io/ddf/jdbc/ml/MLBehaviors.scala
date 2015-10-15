@@ -24,7 +24,7 @@ trait MLBehaviors extends BaseBehaviors {
 
     it should "do binary model computation" in {
       val ddf: DDF = mtcarDDF
-      val model : IModel = mtcarDDF.ML.train("BINARY")
+      val model: IModel = mtcarDDF.ML.train("BINARY")
       val prediction = mtcarDDF.ML.applyModel(model)
       assert(prediction.getNumColumns > 0)
     }
@@ -55,9 +55,10 @@ trait MLBehaviors extends BaseBehaviors {
     val airlineDDF: DDF = l.loadAirlineDDF()
 
     it should "do confusion matrix evaluation" in {
-
+      val ddf: DDF = airlineDDF
+      val model: IModel = airlineDDF.ML.train("REGRESSION")
+      val confusionMatrix = ddf.ML.getConfusionMatrix(model, 1.2)
+      assert(confusionMatrix.nonEmpty)
     }
-
-
   }
 }

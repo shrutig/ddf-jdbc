@@ -2,6 +2,7 @@ package io.ddf.aws.ml
 
 import java.io.{FileWriter, BufferedWriter, InputStream, File}
 import java.sql.{PreparedStatement, Connection}
+import java.util.Date
 
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.machinelearning.AmazonMachineLearningClient
@@ -12,8 +13,10 @@ import io.ddf.DDF
 import io.ddf.aws.AWSDDFManager
 import io.ddf.content.Schema
 import io.ddf.content.Schema.ColumnClass
+import io.ddf.exception.DDFException
 import io.ddf.misc.Config
 
+import scala.concurrent.duration._
 import scala.io.Source
 import scala.collection.JavaConverters._
 
@@ -89,7 +92,7 @@ object AwsModelHelper {
     s3Client.putObject(objectRequest)
   }
 
-  def createDataSourceFromRedShift(schema: Schema, sqlQuery: String,modelType:String): String = {
+  def createDataSourceFromRedShift(schema: Schema, sqlQuery: String, modelType: String): String = {
     val entityId = Identifiers.newDataSourceId
     val database = new RedshiftDatabase()
       .withDatabaseName(Config.getValue(AWS, JDBC_NAME))
@@ -102,7 +105,7 @@ object AwsModelHelper {
       .withDatabaseCredentials(databaseCredentials)
       .withSelectSqlQuery(sqlQuery)
       .withS3StagingLocation(Config.getValue(AWS, ML_STAGE))
-      .withDataSchema(getSchemaAttributeDataSource(schema,modelType))
+      .withDataSchema(getSchemaAttributeDataSource(schema, modelType))
     val request = new CreateDataSourceFromRedshiftRequest()
       .withComputeStatistics(true)
       .withDataSourceId(entityId)
@@ -112,21 +115,21 @@ object AwsModelHelper {
     entityId
   }
 
-  def getEvaluationMetrics(datasourceId:String,modelId:String,modelType: String):Double={
+  def getEvaluationMetrics(datasourceId: String, modelId: String, modelType: String): Double = {
     val evalId = Identifiers.newEvaluationId
     val request = new CreateEvaluationRequest()
-    .withMLModelId(modelId)
-    .withEvaluationDataSourceId(datasourceId)
-    .withEvaluationId(evalId)
+      .withMLModelId(modelId)
+      .withEvaluationDataSourceId(datasourceId)
+      .withEvaluationId(evalId)
     client.createEvaluation(request)
     val metricRequest = new GetEvaluationRequest()
-    .withEvaluationId(evalId)
+      .withEvaluationId(evalId)
     val parameter = modelType match {
       case "BINARY" => "BinaryAUC"
       case "REGRESSION" => "RegressionRMSE"
     }
-    val answer = client.getEvaluation(metricRequest) .getPerformanceMetrics
-      .asInstanceOf[Map[String,String]] get parameter
+    val answer = client.getEvaluation(metricRequest).getPerformanceMetrics
+      .asInstanceOf[Map[String, String]] get parameter
     answer.asInstanceOf[Double]
   }
 
@@ -138,13 +141,39 @@ object AwsModelHelper {
       .withMLModelId(mlModelId)
       .withMLModelName(PREFIX + " model")
       .withMLModelType(modelType)
-      .withRecipe(Source.fromInputStream(getClass.getResourceAsStream(recipe)).mkString)
       .withTrainingDataSourceId(trainDataSourceId)
     if (parameters != null) {
       request.withParameters(parameters)
     }
     client.createMLModel(request)
     mlModelId
+  }
+
+  def waitForCompletion(entityId: String, entityType: String, delay: FiniteDuration = 2.seconds): Unit = {
+    var terminated = false
+    def getStatus() = {
+      entityType match {
+        case "MODEL" => val request = new GetMLModelRequest().withMLModelId(entityId)
+          client.getMLModel(request) getStatus
+        case "EVALUATION" => val request = new GetEvaluationRequest().withEvaluationId(entityId)
+          client.getEvaluation(request) getStatus
+        case "BATCH_PREDICTION" => val request = new GetBatchPredictionRequest().withBatchPredictionId(entityId)
+          client.getBatchPrediction(request) getStatus
+      }
+    }
+    while (!terminated) {
+      val status = getStatus()
+      println(s"Entity $entityId of type $entityType is ${status} at ${new Date()}")
+
+      status match {
+        case "COMPLETED" | "FAILED" | "INVALID" => terminated = true
+      }
+
+      try if (!terminated) Thread.sleep(delay.toMillis)
+      catch {
+        case e: InterruptedException => throw new DDFException(e)
+      }
+    }
   }
 
 
@@ -194,11 +223,11 @@ object AwsModelHelper {
     }
 
     //val target = columns.last getName
-    val target = if(targetType equals "BINARY") "am" else "depdelay"
+    val target = if (targetType equals "BINARY") "am" else "depdelay"
     //TODO :change data, quick fix as current data does not have target at end
 
     val listColumns = columns map (u => if (u.getName equalsIgnoreCase target) (target, targetType)
-      else (u.getName, attributeTypeFromColumnClass(u.getColumnClass)))
+    else (u.getName, attributeTypeFromColumnClass(u.getColumnClass)))
     val attributes = listColumns.map { case (name, attrType) =>
       "{\"attributeName\":" + "\"" + name + "\",\"attributeType\": \"" + attrType + "\"\n}"
     }.mkString(",")

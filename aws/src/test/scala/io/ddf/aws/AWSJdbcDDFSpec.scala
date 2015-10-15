@@ -12,12 +12,12 @@ import org.scalatest.FlatSpec
 class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors with MLBehaviors{
   implicit val loader = AWSLoader
 
-  it should behave like ddfWithRegression
+  /*it should behave like ddfWithRegression
   it should behave like ddfWithBinary
-  it should behave like ddfWithCrossValidation
+  it should behave like ddfWithCrossValidation*/
   it should behave like ddfWithConfusionMatrix
 
-  it should behave like ddfWithAddressing
+  /*it should behave like ddfWithAddressing
   it should behave like ddfWithAggregationHandler
   it should behave like ddfWithStatisticsHandler
   it should behave like ddfWithBinningHandler
@@ -34,7 +34,7 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
   it should behave like ddfWithMissingDataFillSupport
   it should behave like ddfWithMissingDataDropSupport
   it should behave like ddfWithSqlHandler
-  it should behave like ddfWithBasicTransformSupport
+  it should behave like ddfWithBasicTransformSupport*/
 }
 
 object ManagerFactory {

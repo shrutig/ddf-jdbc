@@ -32,17 +32,17 @@ public class CrossValidation {
 
     public List<CrossValidationSet> CVRandom(int k, double trainingSize, long seed) throws DDFException {
         List<CrossValidationSet> finalDDFlist = new ArrayList<CrossValidationSet>();
-        if(trainingSize>=1 || trainingSize<=0)
+        if (trainingSize >= 1 || trainingSize <= 0)
             throw new DDFException("CVRandom cannot be performed with the training size provided");
         long resultSize = rowCount / k;
 
         for (int i = 0; i < k; i++) {
             String temp = Identifiers.newTableName("temp");
             String sqlTest = String.format("CREATE TABLE %s AS SELECT * FROM %s ORDER BY RANDOM() LIMIT ?", temp +
-                    "test",ddf.getTableName());
-            String sqlTrain = String.format("CREATE TABLE %s AS SELECT * FROM %s ORDER BY RANDOM() LIMIT ?", temp+
-                    "train",ddf.getTableName());
-            executeDDL(sqlTest, (long) (resultSize * (1-trainingSize)), -1);
+                    "test", ddf.getTableName());
+            String sqlTrain = String.format("CREATE TABLE %s AS SELECT * FROM %s ORDER BY RANDOM() LIMIT ?", temp +
+                    "train", ddf.getTableName());
+            executeDDL(sqlTest, (long) (resultSize * (1 - trainingSize)), -1);
             executeDDL(sqlTrain, (long) (resultSize * trainingSize), -1);
 
             DDF trainDDF = create(temp + "train");
@@ -69,11 +69,11 @@ public class CrossValidation {
         for (int i = 0; i < k; i++) {
             String temp = Identifiers.newTableName("temp");
             String sqlTest = String.format("CREATE TABLE %s AS SELECT * FROM %s LIMIT ? OFFSET ?", temp +
-                    "test",ddf.getTableName());
+                    "test", ddf.getTableName());
             String sqlTrain = String.format("CREATE TABLE %s AS SELECT * FROM %s LIMIT ? OFFSET ?", temp +
-                    "train",ddf.getTableName());
-            executeDDL(sqlTest,(long) (resultSize * TEST), i * resultSize);
-            executeDDL(sqlTrain,  (long) (resultSize * TRAIN), (long) ((i + TEST) * resultSize));
+                    "train", ddf.getTableName());
+            executeDDL(sqlTest, (long) (resultSize * TEST), i * resultSize);
+            executeDDL(sqlTrain, (long) (resultSize * TRAIN), (long) ((i + TEST) * resultSize));
             DDF trainDDF = create(temp + "train");
             DDF testDDF = create(temp + "test");
             finalDDFlist.add(new CrossValidationSet(trainDDF, testDDF));
@@ -84,10 +84,10 @@ public class CrossValidation {
     public void executeDDL(String ddlString, long resultSize, long offset) {
         try (Connection conn = awsddfManager.getConnection();) {
             try (PreparedStatement stmt = conn.prepareStatement(ddlString);) {
-                stmt.setInt(1, (int)resultSize);
+                stmt.setInt(1, (int) resultSize);
                 if (offset >= 0)
-                    stmt.setInt(2, (int)offset);
-                stmt.executeUpdate();
+                    stmt.setInt(2, (int) offset);
+                stmt.executeUpdate() ;
             } catch (SQLException exception) {
                 throw new RuntimeException(exception);
             }
@@ -96,5 +96,16 @@ public class CrossValidation {
         }
     }
 
-
+    public ResultSet executeSQL(String sql) {
+        try (Connection conn = awsddfManager.getConnection();) {
+            try (PreparedStatement stmt = conn.prepareStatement(sql);) {
+                return stmt.executeQuery();
+            }catch (SQLException exception) {
+                throw new RuntimeException(exception);
+            }
+        } catch (SQLException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
 }
+
