@@ -16,6 +16,7 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
   it should behave like ddfWithBinary
   it should behave like ddfWithCrossValidation*/
   it should behave like ddfWithConfusionMatrix
+  it should behave like ddfWithMetrics
 
   /*it should behave like ddfWithAddressing
   it should behave like ddfWithAggregationHandler

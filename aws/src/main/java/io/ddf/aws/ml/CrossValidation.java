@@ -95,17 +95,5 @@ public class CrossValidation {
             throw new RuntimeException(exception);
         }
     }
-
-    public ResultSet executeSQL(String sql) {
-        try (Connection conn = awsddfManager.getConnection();) {
-            try (PreparedStatement stmt = conn.prepareStatement(sql);) {
-                return stmt.executeQuery();
-            }catch (SQLException exception) {
-                throw new RuntimeException(exception);
-            }
-        } catch (SQLException exception) {
-            throw new RuntimeException(exception);
-        }
-    }
 }
 

@@ -51,7 +51,7 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
 
     for (row <- 0 to result.size - 1 ) {
       val newVal = result(row)._2.asInstanceOf[Double]
-      val oldVal =( List(result(row)._1) collect { case i: java.lang.Number => i.doubleValue() } ). sum
+      val oldVal = ( List(result(row)._1) collect { case i: java.lang.Number => i.doubleValue() } ). sum
       if(oldVal < v && newVal < v)
         matrix(0)(0) = matrix(0)(0) + 1
       else if(oldVal < v && newVal > v)

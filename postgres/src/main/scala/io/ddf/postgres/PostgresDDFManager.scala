@@ -152,6 +152,7 @@ object PostgresCatalog extends Catalog {
 
   override def getColumnType(typeStr: String) : ColumnType = {
     typeStr match {
+      case "boolean" => ColumnType.BOOLEAN
       case "int4" => ColumnType.INT
       case "integer" => ColumnType.INT
       case "int8"=> ColumnType.BIGINT

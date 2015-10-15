@@ -30,7 +30,8 @@ class MLMetrics(ddf: DDF) extends io.ddf.ml.AMLMetricsSupporter(ddf) {
     val originalDDFAsSql = originalDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
       .asInstanceOf[SqlArrayResult].result
     val result = originalDDFAsSql map (row => row(row.size - 1)) zip (predictDDFAsSql map (row => row(row.size - 1)))
-    val matrix = result map { case (oldVal, newVal) => Array(oldVal.asInstanceOf[Double], newVal.asInstanceOf[Double]) }
+    val matrix = result map { case (oldVal, newVal) => Array(( List(oldVal) collect { case i: java.lang.Number => i
+      .doubleValue() } ). sum, newVal.asInstanceOf[Double]) }
     val rocMetric = new RocMetric(matrix.toArray, 0.0)
     rocMetric.computeAUC()
     rocMetric
@@ -40,7 +41,7 @@ class MLMetrics(ddf: DDF) extends io.ddf.ml.AMLMetricsSupporter(ddf) {
   override def rmse(testDDF: DDF, implicitPref: Boolean): Double = {
     val model = ddf.ML.train("REGRESSION")
     val awsModel = model.asInstanceOf[MLModel]
-    val sql = "SELECT * FROM " + testDDF.getTableName + "limit 1"
+    val sql = "SELECT * FROM " + testDDF.getTableName
     val datasourceId = AwsModelHelper.createDataSourceFromRedShift(ddf.getSchema, sql, awsModel.getModelType)
     AwsModelHelper.getEvaluationMetrics(datasourceId, awsModel.getModelId, awsModel.getModelType)
   }

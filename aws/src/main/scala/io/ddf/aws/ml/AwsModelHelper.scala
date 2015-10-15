@@ -128,9 +128,8 @@ object AwsModelHelper {
       case "BINARY" => "BinaryAUC"
       case "REGRESSION" => "RegressionRMSE"
     }
-    val answer = client.getEvaluation(metricRequest).getPerformanceMetrics
-      .asInstanceOf[Map[String, String]] get parameter
-    answer.asInstanceOf[Double]
+    val answer = client.getEvaluation(metricRequest).getPerformanceMetrics getProperties()
+    answer get parameter toDouble
   }
 
   def createModel(trainDataSourceId: String, recipe: String, modelType: MLModelType, parameters: java.util.Map[String,
