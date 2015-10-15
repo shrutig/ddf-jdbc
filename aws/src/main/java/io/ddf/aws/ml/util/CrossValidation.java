@@ -20,7 +20,7 @@ public class CrossValidation {
   private long rowCount;
   private AWSDDFManager awsddfManager;
 
-  CrossValidation(DDF ddf) {
+  public CrossValidation(DDF ddf) {
     this.ddf = ddf;
     this.awsddfManager = (AWSDDFManager) ddf.getManager();
     try {
@@ -66,7 +66,7 @@ public class CrossValidation {
     }
   }
 
-  public List<CrossValidationSet> CVK(int k, long seed) {
+  public List<CrossValidationSet> CVK(int k) {
     List<CrossValidationSet> finalDDFList = new ArrayList<>();
     long resultSize = rowCount / k;
     for (int i = 0; i < k; i++) {

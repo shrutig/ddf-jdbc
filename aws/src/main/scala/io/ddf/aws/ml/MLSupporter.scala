@@ -1,6 +1,6 @@
 package io.ddf.aws.ml
 
-import java.{lang, util}
+import java.lang
 
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.machinelearning.model.{MLModelType, RedshiftDatabase, RedshiftDatabaseCredentials}
@@ -59,22 +59,21 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
     newDDF
   }
 
-  override def CVRandom(k: Int, trainingSize: Double, seed: lang.Long): util.List[CrossValidationSet] = {
+  override def CVRandom(k: Int, trainingSize: Double, seed: lang.Long): java.util.List[CrossValidationSet] = {
     val crossValidation: CrossValidation = new CrossValidation(ddf)
-    crossValidation.CVRandom(k, trainingSize, seed)
+    crossValidation.CVRandom(k, trainingSize)
   }
 
-  override def CVKFold(k: Int, seed: lang.Long): util.List[CrossValidationSet] = {
+  override def CVKFold(k: Int, seed: lang.Long): java.util.List[CrossValidationSet] = {
     val crossValidation: CrossValidation = new CrossValidation(ddf)
-    crossValidation.CVK(k, seed)
+    crossValidation.CVK(k)
   }
-
 
   override def train(trainMethodKey: String, args: AnyRef*): IModel = {
     val sql = "SELECT * FROM " + ddf.getTableName
     val dataSourceId = awsHelper.createDataSourceFromRedShift(ddf.getSchema, sql)
     val paramsMap = if (args.length < 1 || args(0) == null) {
-      new util.HashMap[String, String]()
+      new java.util.HashMap[String, String]()
     } else {
       args(0).asInstanceOf[java.util.Map[String, String]]
     }
