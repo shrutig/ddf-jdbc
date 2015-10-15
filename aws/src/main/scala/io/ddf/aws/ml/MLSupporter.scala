@@ -4,9 +4,9 @@ import java.{lang, util}
 
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.machinelearning.model.{MLModelType, RedshiftDatabase, RedshiftDatabaseCredentials}
-import io.aws.ml.util.CrossValidation
 import io.ddf.DDF
 import io.ddf.aws.AWSDDFManager
+import io.ddf.aws.ml.util.CrossValidation
 import io.ddf.jdbc.content.DdlCommand
 import io.ddf.misc.ADDFFunctionalGroupHandler
 import io.ddf.ml.{CrossValidationSet, IModel, ISupportML}
