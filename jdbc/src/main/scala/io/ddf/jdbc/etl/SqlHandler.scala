@@ -1,19 +1,13 @@
 package io.ddf.jdbc.etl
 
-import java.io.StringReader
 import java.sql.Connection
 import java.util.Collections
 
+import io.ddf.DDF
 import io.ddf.content.{Schema, SqlResult, SqlTypedResult}
-import io.ddf.datasource.{DataFormat, DataSourceDescriptor, JDBCDataSourceDescriptor, SQLDataSourceDescriptor}
-import io.ddf.exception.DDFException
+import io.ddf.datasource.{DataFormat, DataSourceDescriptor}
 import io.ddf.jdbc.JdbcDDFManager
 import io.ddf.jdbc.content._
-import io.ddf.{DDF, TableNameReplacer}
-import net.sf.jsqlparser.JSQLParserException
-import net.sf.jsqlparser.parser.CCJSqlParserManager
-import net.sf.jsqlparser.statement.Statement
-import net.sf.jsqlparser.statement.select.Select
 import org.apache.commons.lang.StringUtils
 
 
@@ -70,6 +64,7 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
         this.getManager.log(">>> Creating view in pe/ddf")
         val sqlRet = this.sql("select * from (" + command + ") tmp limit 1");
         val schema = sqlRet.getSchema
+        val viewName = TableNameGenerator.genTableName(8)
         schema.setTableName(command)
         val newDDF = ddf.getManager.newDDF(this.getManager, // the ddfmanager
                                           "this is a view", // the content

@@ -2,13 +2,14 @@ package io.ddf.aws
 
 import io.ddf.DDFManager
 import io.ddf.DDFManager.EngineType
+import io.ddf.aws.ml.MLBehaviors
 import io.ddf.jdbc.analytics.AnalyticsBehaviors
 import io.ddf.jdbc.content.ContentBehaviors
 import io.ddf.jdbc.etl.ETLBehaviors
 import io.ddf.jdbc.{EngineDescriptor, JdbcDDFManager, Loader}
 import org.scalatest.FlatSpec
 
-class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors {
+class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors with MLBehaviors {
   implicit val loader = AWSLoader
 
   it should behave like ddfWithAddressing
@@ -30,12 +31,15 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
   it should behave like ddfWithSqlHandler
   it should behave like ddfWithBasicTransformSupport
 
+  //ml test cases
+  it should behave like ddfWithRegression
 
 }
 
 object ManagerFactory {
   val engineDescriptor = EngineDescriptor("aws")
-  val jdbcDDFManager = DDFManager.get(DDFManager.EngineType.AWS, engineDescriptor).asInstanceOf[JdbcDDFManager]
+  val awsEngineDescriptor = new ExtJDBCDataSourceDescriptor(engineDescriptor.getDataSourceUri, engineDescriptor.getCredentials, new java.util.HashMap())
+  val jdbcDDFManager = DDFManager.get(DDFManager.EngineType.AWS, awsEngineDescriptor).asInstanceOf[JdbcDDFManager]
 }
 
 object AWSLoader extends Loader {

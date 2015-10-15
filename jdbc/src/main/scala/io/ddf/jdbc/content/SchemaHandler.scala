@@ -4,8 +4,8 @@ import java.lang.{Integer => JInt}
 import java.util
 import java.util.{HashMap => JHMap, List => JList, Map => JMap}
 
-import io.ddf.content.Schema.{Column, ColumnType}
-import io.ddf.content.{IHandleRepresentations, Schema}
+import io.ddf.content.Schema
+import io.ddf.content.Schema.ColumnType
 import io.ddf.exception.DDFException
 import io.ddf.{DDF, Factor}
 
@@ -42,30 +42,24 @@ class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
         }
       }
     }
-    var listLevelCounts: JMap[Integer, JMap[String, Integer]] = null
-
     //loop through all factors and compute factor
 
     //(select * from hung_test) tmp
-    val table_name = if(this.getDDF.getIsDDFView){
-      s"(${this.getDDF.getTableName}) " + TableNameGenerator.genTableName(8)
-    } else {
-      s"${this.getDDF.getTableName} "
-    }
+    val table_name = this.getDDF.getTableName
 
-    columnIndexes.par.foreach( colIndex => {
+    columnIndexes.par.foreach(colIndex => {
       val col = this.getColumn(this.getColumnName(colIndex))
-	  
+
       val quotedColName = "\"" + col.getName() + "\""
       val command = s"select ${quotedColName}, count(${quotedColName}) from " +
         s"$table_name group by ${quotedColName}"
 
-      val sqlResult = this.getManager.sql(command,"" )
+      val sqlResult = this.getManager.sql(command, "")
       //JMap[String, Integer]
       var result = sqlResult.getRows()
-      val levelCounts: java.util.Map[String, Integer] = new java.util.HashMap[String,Integer]()
+      val levelCounts: java.util.Map[String, Integer] = new java.util.HashMap[String, Integer]()
       for (item <- result) {
-        if(item.split("\t").length > 1)
+        if (item.split("\t").length > 1)
           levelCounts.put(item.split("\t")(0), Integer.parseInt(item.split("\t")(1)))
         else //todo log this properly
           this.mLog.debug("exception parsing item")
