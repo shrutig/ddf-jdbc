@@ -22,7 +22,7 @@ trait MLBehaviors extends BaseBehaviors {
     }
   }
 
-  def ddfWithRegressionParameters(implicit l: Loader): Unit = {
+  def ddfWithModelParameters(implicit l: Loader): Unit = {
     val airlineDDF = l.loadAirlineDDF()
 
     it should "do regression model computation with parameters" in {
