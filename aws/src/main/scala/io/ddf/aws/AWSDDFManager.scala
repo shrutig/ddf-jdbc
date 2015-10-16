@@ -31,4 +31,8 @@ class AWSDDFManager(dataSourceDescriptor: DataSourceDescriptor, engineType: Engi
     }
   }
 
+  override def load(command: String) ={
+    null
+  }
+
 }
