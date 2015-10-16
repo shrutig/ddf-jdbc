@@ -21,10 +21,10 @@ trait MLBehaviors extends BaseBehaviors {
   }
 
   def ddfWithBinary(implicit l: Loader): Unit = {
-    val mtcarDDF = AWSLoader.loadBinaryMtCarsDDF()
+    val mtcarDDF = l.loadMtCarsDDF()
 
     it should "do binary model computation" in {
-      val ddf: DDF = mtcarDDF
+      val ddf: DDF = mtcarDDF.sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM ddf://adatao/mtcars")
       val model: IModel = mtcarDDF.ML.train("BINARY")
       val prediction = mtcarDDF.ML.applyModel(model)
       assert(prediction.getNumColumns > 0)
@@ -34,6 +34,14 @@ trait MLBehaviors extends BaseBehaviors {
 
   def ddfWithMulticlass(implicit l: Loader): Unit = {
 
+    val mtcarDDF = l.loadMtCarsDDF()
+
+    it should "do binary model computation" in {
+      val ddf: DDF = mtcarDDF
+      val model: IModel = mtcarDDF.ML.train("MULTICLASS")
+      val prediction = mtcarDDF.ML.applyModel(model)
+      assert(prediction.getNumColumns > 0)
+    }
   }
 
   def ddfWithCrossValidation(implicit l: Loader): Unit = {
