@@ -187,6 +187,26 @@ class AwsHelper(awsProperties: AwsProperties) {
       }
     }
   }
+
+  def getEvaluationMetrics(dataSourceId: String, modelId: String, modelType: String): Double = {
+    val evalId = Identifiers.newEvaluationId
+    val request = new CreateEvaluationRequest()
+      .withMLModelId(modelId)
+      .withEvaluationDataSourceId(dataSourceId)
+      .withEvaluationId(evalId)
+    client.createEvaluation(request)
+    val metricRequest = new GetEvaluationRequest()
+      .withEvaluationId(evalId)
+    val parameter = modelType match {
+      case "BINARY" => "BinaryAUC"
+      case "REGRESSION" => "RegressionRMSE"
+    }
+    waitForEvaluation(evalId)
+    val answer = client.getEvaluation(metricRequest).getPerformanceMetrics getProperties()
+    answer get parameter toDouble
+  }
+
+  def selectSql(tableName:String) = s"SELECT * FROM $tableName"
 }
 
 object Identifiers {
@@ -212,6 +232,7 @@ object Identifiers {
   def newManifestId: String = generateEntityId("manifest")
 
   val representation: Array[Class[TableNameRepresentation]] = Array(Representations.VIEW)
+
 }
 
 case class AwsProperties(credentials: BasicAWSCredentials,

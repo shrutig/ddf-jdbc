@@ -22,7 +22,6 @@ trait MLBehaviors extends BaseBehaviors {
     val mtcarDDF = l.loadMtCarsDDF()
 
     it should "do binary model computation" in {
-      val ddf: DDF = mtcarDDF
       val model: IModel = mtcarDDF.ML.train("BINARY")
       val prediction = mtcarDDF.ML.applyModel(model)
       assert(prediction.getNumColumns > 0)
@@ -30,9 +29,10 @@ trait MLBehaviors extends BaseBehaviors {
 
   }
 
-  def ddfWithMulticlass(implicit l: Loader): Unit = {
+  def ddfWithMultiClass(implicit l: Loader): Unit = {
 
   }
+
 
   def ddfWithCrossValidation(implicit l: Loader): Unit = {
     val airlineDDF: DDF = l.loadAirlineDDF()
@@ -58,6 +58,22 @@ trait MLBehaviors extends BaseBehaviors {
       val model: IModel = airlineDDF.ML.train("REGRESSION")
       val confusionMatrix = ddf.ML.getConfusionMatrix(model, 1.2)
       assert(confusionMatrix.nonEmpty)
+    }
+  }
+
+  def ddfWithMetrics(implicit l: Loader): Unit = {
+    val airlineDDF: DDF = l.loadAirlineDDF()
+
+    it should "do rmse evaluation" in {
+      val ddf: DDF = airlineDDF
+      val rmse = ddf.getMLMetricsSupporter.rmse(ddf,true)
+      assert(rmse > 0)
+    }
+
+    it should "do roc computation" in{
+      val ddf: DDF = airlineDDF
+      val rocMetric = ddf.getMLMetricsSupporter.roc(ddf,1)
+      assert(rocMetric.auc >0)
     }
   }
 }

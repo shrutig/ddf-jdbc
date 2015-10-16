@@ -32,7 +32,7 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
   it should behave like ddfWithBasicTransformSupport
 
   //ml test cases
-  it should behave like ddfWithRegression
+//  it should behave like ddfWithRegression
 
 }
 

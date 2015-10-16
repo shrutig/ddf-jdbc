@@ -20,6 +20,7 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
   val runtimeConfig = ddFManager.getRuntimeConfig
   val awsHelper = new AwsHelper(getPropertiesForAmazonML)
 
+  def getAwsHelper = awsHelper
 
   def getPropertiesForAmazonML = {
     val accessId = ddFManager.getRequiredValue("awsAccessId")
@@ -70,8 +71,8 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
   }
 
   override def train(trainMethodKey: String, args: AnyRef*): IModel = {
-    val sql = "SELECT * FROM " + ddf.getTableName
-    val dataSourceId = awsHelper.createDataSourceFromRedShift(ddf.getSchema, sql)
+    val tableName = ddf.getTableName
+    val dataSourceId = awsHelper.createDataSourceFromRedShift(ddf.getSchema, s"SELECT ")
     val paramsMap = if (args.length < 1 || args(0) == null) {
       new java.util.HashMap[String, String]()
     } else {
