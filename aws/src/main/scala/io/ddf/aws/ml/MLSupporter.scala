@@ -6,6 +6,7 @@ import com.amazonaws.services.machinelearning.model.MLModelType
 import io.ddf.DDF
 import io.ddf.aws.AWSDDFManager
 import io.ddf.aws.ml.util.CrossValidation
+import io.ddf.exception.DDFException
 import io.ddf.jdbc.content.{DdlCommand, Representations, SqlArrayResult}
 import io.ddf.misc.ADDFFunctionalGroupHandler
 import io.ddf.ml.{CrossValidationSet, IModel, ISupportML}
@@ -60,7 +61,12 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
 
   override def train(trainMethodKey: String, args: AnyRef*): IModel = {
     val sql = awsHelper.selectSql(ddf.getTableName)
-    val mlModelType = MLModelType.valueOf(trainMethodKey)
+    val mlModelType = try {
+      MLModelType.valueOf(trainMethodKey)
+    }
+    catch {
+      case e: IllegalArgumentException => throw new DDFException(e)
+    }
 
     val dataSourceId = awsMLHelper.createDataSourceFromRedShift(ddf.getSchema, sql, mlModelType)
     val paramsMap = if (args.length < 1 || args(0) == null) {

@@ -39,7 +39,7 @@ class AwsMLHelper(awsProperties: AwsProperties) {
       .withDatabaseInformation(awsProperties.redshiftDatabase)
       .withDatabaseCredentials(awsProperties.redshiftDatabaseCredentials)
       .withSelectSqlQuery(sqlQuery)
-      .withS3StagingLocation(awsProperties.s3Properties.s3StagingBucket)
+      .withS3StagingLocation(awsProperties.s3Properties.s3StagingURI)
       .withDataSchema(getSchemaAttributeDataSource(schema,mLModelType))
     val request = new CreateDataSourceFromRedshiftRequest()
       .withComputeStatistics(true)
@@ -78,7 +78,7 @@ class AwsMLHelper(awsProperties: AwsProperties) {
   def createTableSqlForModelType(mLModelType: MLModelType, tableName: String, targetColumn: Schema.Column): String = {
     mLModelType match {
       case MLModelType.BINARY => s"CREATE TABLE $tableName (bestAnswer int4,score float8)"
-      case MLModelType.REGRESSION => s"CREATE TABLE $tableName (bestAnswer float8, score float8)"
+      case MLModelType.REGRESSION => s"CREATE TABLE $tableName (trueLabel float8, score float8)"
       case MLModelType.MULTICLASS =>
         val columns = targetColumn.getOptionalFactor.getLevels.asScala.mkString(",")
         s"CREATE TABLE $tableName ($columns)"
@@ -101,7 +101,7 @@ class AwsMLHelper(awsProperties: AwsProperties) {
       .withBatchPredictionId(batchPredictionId)
       .withBatchPredictionName("Batch Prediction for " + dataSourceId)
       .withMLModelId(awsModel.getModelId)
-      .withOutputUri(awsProperties.s3Properties.s3StagingBucket)
+      .withOutputUri(awsProperties.s3Properties.s3StagingURI)
       .withBatchPredictionDataSourceId(dataSourceId)
     client.createBatchPrediction(bpRequest)
     //wait for this to complete

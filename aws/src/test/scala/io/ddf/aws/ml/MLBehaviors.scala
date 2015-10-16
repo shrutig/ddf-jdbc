@@ -16,8 +16,8 @@ trait MLBehaviors extends BaseBehaviors {
 
     it should "do regression model computation" in {
       val ddf: DDF = airlineDDF
-      val model: IModel = airlineDDF.ML.train("REGRESSION")
-      val prediction = airlineDDF.ML.applyModel(model)
+      val model: IModel = ddf.ML.train("REGRESSION")
+      val prediction = ddf.ML.applyModel(model)
       assert(prediction.getNumColumns > 0)
     }
   }
@@ -32,8 +32,8 @@ trait MLBehaviors extends BaseBehaviors {
       map.put("sgd.l2RegularizationAmount","1.0E-08")
       map.put("sgd.maxPasses","10")
       map.put("sgd.maxMLModelSizeInBytes","33554432")
-      val model: IModel = airlineDDF.ML.train("REGRESSION",map)
-      val prediction = airlineDDF.ML.applyModel(model)
+      val model: IModel = ddf.ML.train("REGRESSION",map)
+      val prediction = ddf.ML.applyModel(model)
       assert(prediction.getNumColumns > 0)
     }
   }
@@ -43,8 +43,8 @@ trait MLBehaviors extends BaseBehaviors {
 
     it should "do binary model computation" in {
       val ddf: DDF = mtcarDDF.sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM ddf://adatao/mtcars")
-      val model: IModel = mtcarDDF.ML.train("BINARY")
-      val prediction = mtcarDDF.ML.applyModel(model)
+      val model: IModel = ddf.ML.train("BINARY")
+      val prediction = ddf.ML.applyModel(model)
       assert(prediction.getNumColumns > 0)
     }
 
@@ -56,8 +56,8 @@ trait MLBehaviors extends BaseBehaviors {
 
     it should "do multiclass model computation" in {
       val ddf: DDF = mtcarDDF
-      val model: IModel = mtcarDDF.ML.train("MULTICLASS")
-      val prediction = mtcarDDF.ML.applyModel(model)
+      val model: IModel = ddf.ML.train("MULTICLASS")
+      val prediction = ddf.ML.applyModel(model)
       assert(prediction.getNumColumns > 0)
     }
   }
@@ -83,7 +83,7 @@ trait MLBehaviors extends BaseBehaviors {
 
     it should "do confusion matrix evaluation" in {
       val ddf: DDF = airlineDDF
-      val model: IModel = airlineDDF.ML.train("REGRESSION")
+      val model: IModel = ddf.ML.train("REGRESSION")
       val confusionMatrix = ddf.ML.getConfusionMatrix(model, 1.2)
       assert(confusionMatrix.nonEmpty)
     }

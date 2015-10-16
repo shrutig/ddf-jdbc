@@ -18,15 +18,15 @@ object AwsConfig{
     val redshiftDatabaseName = ddfManager.getRequiredValue("redshiftDatabase")
     val redshiftClusterId = ddfManager.getRequiredValue("redshiftClusterId")
     val roleArn = ddfManager.getRequiredValue("redshiftIAMRoleARN")
-    val s3StagingBucket = ddfManager.getRequiredValue("s3StagingBucket")
     val s3Region = ddfManager.getRequiredValue("s3Region")
-    val bucketName = ddfManager.getRequiredValue("bucketName")
-    val key = ddfManager.getRequiredValue("key")
+    val s3bucketName = ddfManager.getRequiredValue("s3bucketName")
+    val s3key = ddfManager.getRequiredValue("s3key")
+    val s3StagingURI = "s3://"+s3bucketName+"/"+s3key
 
     val awsCredentials = new BasicAWSCredentials(accessId, accessKey)
     val redshiftDatabase = new RedshiftDatabase().withDatabaseName(redshiftDatabaseName).withClusterIdentifier(redshiftClusterId)
     val redshiftDatabaseCredentials = new RedshiftDatabaseCredentials().withUsername(credentials.getUsername).withPassword(credentials.getPassword)
-    val s3Properties = S3Properties(awsCredentials, s3StagingBucket, s3Region,bucketName,key)
+    val s3Properties = S3Properties(awsCredentials, s3StagingURI, s3Region,s3bucketName,s3key)
     AwsProperties(awsCredentials, redshiftDatabase, redshiftDatabaseCredentials, credentials, s3Properties, roleArn)
   }
 }
@@ -58,10 +58,10 @@ object Identifiers {
 }
 
 case class S3Properties(credentials: BasicAWSCredentials,
-                        s3StagingBucket: String,
+                        s3StagingURI: String,
                         s3Region: String,
-                         bucketName:String,
-                         key:String)
+                         s3bucketName:String,
+                         s3key:String)
 
 case class AwsProperties(credentials: BasicAWSCredentials,
                          redshiftDatabase: RedshiftDatabase,
