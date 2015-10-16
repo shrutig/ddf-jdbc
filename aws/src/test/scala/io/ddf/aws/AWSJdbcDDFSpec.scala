@@ -1,12 +1,12 @@
 package io.ddf.aws
 
-import io.ddf.DDFManager
 import io.ddf.DDFManager.EngineType
 import io.ddf.aws.ml.MLBehaviors
 import io.ddf.jdbc.analytics.AnalyticsBehaviors
 import io.ddf.jdbc.content.ContentBehaviors
 import io.ddf.jdbc.etl.ETLBehaviors
 import io.ddf.jdbc.{EngineDescriptor, JdbcDDFManager, Loader}
+import io.ddf.{DDF, DDFManager}
 import org.scalatest.FlatSpec
 
 class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehaviors with ETLBehaviors with MLBehaviors {
@@ -32,7 +32,7 @@ class AWSJdbcDDFSpec extends FlatSpec with AnalyticsBehaviors with ContentBehavi
   it should behave like ddfWithBasicTransformSupport
 
   //ml test cases
-//  it should behave like ddfWithRegression
+  //  it should behave like ddfWithRegression
 
 }
 
@@ -52,4 +52,21 @@ object AWSLoader extends Loader {
   }
 
   override def MT_CARS_CREATE = "CREATE TABLE mtcars (mpg decimal,cyl int, disp decimal, hp int, drat decimal, wt decimal, qsec decimal, vs int, am int, gear int, carb int)"
+
+  def BINARY_CARS_CREATE = "CREATE TABLE mtcars (mpg double,cyl int, disp double, hp int, drat double, wt double, qsec double, vs int)"
+
+  def loadBinaryMtCarsDDF(): DDF = {
+    var ddf: DDF = null
+    try {
+      ddf = jdbcDDFManager.getDDFByName("binaryMtcars")
+    } catch {
+      case e: Exception =>
+        dropTableIfExists("binaryMtcars")
+        jdbcDDFManager.create(BINARY_CARS_CREATE)
+        val filePath = getClass.getResource("/binaryCars").getPath
+        jdbcDDFManager.load("load '" + filePath + "'  delimited by ' '  into binaryMtcars")
+        ddf = jdbcDDFManager.getDDFByName("binaryMtcars")
+    }
+    ddf
+  }
 }

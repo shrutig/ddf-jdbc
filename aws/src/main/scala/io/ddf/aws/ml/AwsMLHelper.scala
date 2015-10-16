@@ -33,14 +33,14 @@ class AwsMLHelper(awsProperties: AwsProperties) {
   }
 
 
-  def createDataSourceFromRedShift(schema: Schema, sqlQuery: String): String = {
+  def createDataSourceFromRedShift(schema: Schema, sqlQuery: String,mLModelType: MLModelType): String = {
     val dataSourceId = Identifiers.newDataSourceId
     val dataSpec = new RedshiftDataSpec()
       .withDatabaseInformation(awsProperties.redshiftDatabase)
       .withDatabaseCredentials(awsProperties.redshiftDatabaseCredentials)
       .withSelectSqlQuery(sqlQuery)
       .withS3StagingLocation(awsProperties.s3Properties.s3StagingBucket)
-      .withDataSchema(getSchemaAttributeDataSource(schema))
+      .withDataSchema(getSchemaAttributeDataSource(schema,mLModelType))
     val request = new CreateDataSourceFromRedshiftRequest()
       .withComputeStatistics(true)
       .withDataSourceId(dataSourceId)
@@ -50,13 +50,15 @@ class AwsMLHelper(awsProperties: AwsProperties) {
     dataSourceId
   }
 
-  def getSchemaAttributeDataSource(schema: Schema): String = {
+  def getSchemaAttributeDataSource(schema: Schema,mLModelType: MLModelType): String = {
     val columns = schema.getColumns.asScala
     //for supervised learning last column is the target column
     val target = columns.last.getName
+    val targetType = getTargetAttributeType(mLModelType)
     val listColumns = columns map (u => (u.getName, attributeTypeFromColumnClass(u.getColumnClass)))
     val attributes = listColumns.map { case (name, attrType) =>
-      "{\"attributeName\":" + "\"" + name + "\",\"attributeType\": \"" + attrType + "\"\n}"
+      val actualType = if(name.equals(target)) targetType else attrType
+      "{\"attributeName\":" + "\"" + name + "\",\"attributeType\": \"" + actualType + "\"\n}"
     }.mkString(",")
 
     "{\n  \"excludedAttributeNames\": [],\n  \"version\": \"1.0\",\n " +
@@ -80,6 +82,15 @@ class AwsMLHelper(awsProperties: AwsProperties) {
       case MLModelType.MULTICLASS =>
         val columns = targetColumn.getOptionalFactor.getLevels.asScala.mkString(",")
         s"CREATE TABLE $tableName ($columns)"
+    }
+  }
+
+  def getTargetAttributeType(mLModelType: MLModelType): String ={
+    mLModelType match {
+      case MLModelType.BINARY => "BINARY"
+      case MLModelType.REGRESSION => "NUMERIC"
+      case MLModelType.MULTICLASS => "CATEGORICAL"
+      case _ => throw new IllegalArgumentException
     }
   }
 

@@ -30,7 +30,8 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
   override def applyModel(model: IModel, hasLabels: Boolean, includeFeatures: Boolean): DDF = {
     val awsModel = model.asInstanceOf[AwsModel]
     val tableName = Identifiers.newTableName(awsModel.getModelId)
-    val dataSourceId = awsMLHelper.createDataSourceFromRedShift(ddf.getSchema, s"SELECT * FROM $tableName")
+    val sql = awsHelper.selectSql(tableName)
+    val dataSourceId = awsMLHelper.createDataSourceFromRedShift(ddf.getSchema, sql, awsModel.getMLModelType)
     //this will wait for batch prediction to complete
     val batchId = awsMLHelper.createBatchPrediction(awsModel, dataSourceId)
     //last column is target column for supervised learning
@@ -58,13 +59,15 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
 
   override def train(trainMethodKey: String, args: AnyRef*): IModel = {
     val sql = awsHelper.selectSql(ddf.getTableName)
-    val dataSourceId = awsMLHelper.createDataSourceFromRedShift(ddf.getSchema, sql)
+    val mlModelType = MLModelType.valueOf(trainMethodKey)
+
+    val dataSourceId = awsMLHelper.createDataSourceFromRedShift(ddf.getSchema, sql, mlModelType)
     val paramsMap = if (args.length < 1 || args(0) == null) {
       new java.util.HashMap[String, String]()
     } else {
       args(0).asInstanceOf[java.util.Map[String, String]]
     }
-    val mlModelType = MLModelType.valueOf(trainMethodKey)
+
     //this will wait for model creation to complete
     val modelId = awsMLHelper.createModel(dataSourceId, mlModelType, paramsMap)
     new AwsModel(modelId, mlModelType)

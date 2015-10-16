@@ -1,6 +1,7 @@
 package io.ddf.aws.ml
 
 import io.ddf.DDF
+import io.ddf.aws.AWSLoader
 import io.ddf.jdbc.{BaseBehaviors, Loader}
 import io.ddf.ml.IModel
 import org.scalatest.FlatSpec
@@ -12,6 +13,7 @@ trait MLBehaviors extends BaseBehaviors {
     val airlineDDF = l.loadAirlineDDF()
 
     it should "do regression model computation" in {
+      val ddf: DDF = airlineDDF
       val model: IModel = airlineDDF.ML.train("REGRESSION")
       val prediction = airlineDDF.ML.applyModel(model)
       assert(prediction.getNumColumns > 0)
@@ -19,9 +21,10 @@ trait MLBehaviors extends BaseBehaviors {
   }
 
   def ddfWithBinary(implicit l: Loader): Unit = {
-    val mtcarDDF = l.loadMtCarsDDF()
+    val mtcarDDF = AWSLoader.loadBinaryMtCarsDDF()
 
     it should "do binary model computation" in {
+      val ddf: DDF = mtcarDDF
       val model: IModel = mtcarDDF.ML.train("BINARY")
       val prediction = mtcarDDF.ML.applyModel(model)
       assert(prediction.getNumColumns > 0)
@@ -29,10 +32,9 @@ trait MLBehaviors extends BaseBehaviors {
 
   }
 
-  def ddfWithMultiClass(implicit l: Loader): Unit = {
+  def ddfWithMulticlass(implicit l: Loader): Unit = {
 
   }
-
 
   def ddfWithCrossValidation(implicit l: Loader): Unit = {
     val airlineDDF: DDF = l.loadAirlineDDF()
@@ -76,4 +78,5 @@ trait MLBehaviors extends BaseBehaviors {
       assert(rocMetric.auc >0)
     }
   }
+
 }
