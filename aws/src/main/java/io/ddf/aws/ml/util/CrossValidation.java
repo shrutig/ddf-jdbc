@@ -33,7 +33,7 @@ public class CrossValidation {
   private final float TRAIN = 0.7f;
   private final float TEST = 0.3f;
 
-  public List<CrossValidationSet> CVRandom(int k, double trainingSize) throws DDFException {
+  public List<CrossValidationSet> CVRandom(int k, double trainingSize, long seed) throws DDFException {
     List<CrossValidationSet> finalDDFList = new ArrayList<>();
     if (trainingSize >= 1 || trainingSize <= 0)
       throw new DDFException("CVRandom cannot be performed with the training size provided");
@@ -42,9 +42,11 @@ public class CrossValidation {
     for (int i = 0; i < k; i++) {
       String temp = Identifiers.newTableName("temp");
       String sqlTest = String
-          .format("CREATE TABLE %s AS SELECT * FROM %s ORDER BY RANDOM() LIMIT ?", temp + "test", ddf.getTableName());
+          .format("CREATE TABLE %s AS SELECT * FROM %s ORDER BY RANDOM(%d) LIMIT ?", temp + "test", ddf.getTableName
+                  (),(int)seed);
       String sqlTrain = String
-          .format("CREATE TABLE %s AS SELECT * FROM %s ORDER BY RANDOM() LIMIT ?", temp + "train", ddf.getTableName());
+          .format("CREATE TABLE %s AS SELECT * FROM %s ORDER BY RANDOM(%d) LIMIT ?", temp + "train", ddf.getTableName
+                  (),(int)seed);
       executeDDL(sqlTest, (long) (resultSize * (1 - trainingSize)), -1);
       executeDDL(sqlTrain, (long) (resultSize * trainingSize), -1);
 

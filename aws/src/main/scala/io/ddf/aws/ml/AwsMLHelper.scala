@@ -23,7 +23,7 @@ class AwsMLHelper(awsProperties: AwsProperties) {
       .withMLModelName(modelId)
       .withMLModelType(modelType)
       .withTrainingDataSourceId(trainDataSourceId)
-    if (parameters != null) {
+    if (parameters != Map[String,String]()) {
       request.withParameters(parameters)
     }
     client.createMLModel(request)
@@ -123,7 +123,8 @@ class AwsMLHelper(awsProperties: AwsProperties) {
   }
 
 
-  def waitForCompletion(entityId: String, entityType: String, delay: FiniteDuration = FiniteDuration(2, TimeUnit.SECONDS)): Unit = {
+  def waitForCompletion(entityId: String, entityType: String, delay: FiniteDuration = FiniteDuration(60, TimeUnit
+    .SECONDS)): Unit = {
     var terminated = false
     def getStatus = {
       entityType match {

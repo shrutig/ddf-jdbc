@@ -20,11 +20,13 @@ object AwsConfig{
     val roleArn = ddfManager.getRequiredValue("redshiftIAMRoleARN")
     val s3StagingBucket = ddfManager.getRequiredValue("s3StagingBucket")
     val s3Region = ddfManager.getRequiredValue("s3Region")
+    val bucketName = ddfManager.getRequiredValue("bucketName")
+    val key = ddfManager.getRequiredValue("key")
 
     val awsCredentials = new BasicAWSCredentials(accessId, accessKey)
     val redshiftDatabase = new RedshiftDatabase().withDatabaseName(redshiftDatabaseName).withClusterIdentifier(redshiftClusterId)
     val redshiftDatabaseCredentials = new RedshiftDatabaseCredentials().withUsername(credentials.getUsername).withPassword(credentials.getPassword)
-    val s3Properties = S3Properties(awsCredentials, s3StagingBucket, s3Region)
+    val s3Properties = S3Properties(awsCredentials, s3StagingBucket, s3Region,bucketName,key)
     AwsProperties(awsCredentials, redshiftDatabase, redshiftDatabaseCredentials, credentials, s3Properties, roleArn)
   }
 }
@@ -47,7 +49,7 @@ object Identifiers {
 
   def newBatchPredictionId: String = generateEntityId("bp")
 
-  def newTableName(model: String): String = generateEntityId(model)
+  def newTableName(name: String): String = generateEntityId(name)
 
   def newManifestId: String = generateEntityId("manifest")
 
@@ -57,7 +59,9 @@ object Identifiers {
 
 case class S3Properties(credentials: BasicAWSCredentials,
                         s3StagingBucket: String,
-                        s3Region: String)
+                        s3Region: String,
+                         bucketName:String,
+                         key:String)
 
 case class AwsProperties(credentials: BasicAWSCredentials,
                          redshiftDatabase: RedshiftDatabase,

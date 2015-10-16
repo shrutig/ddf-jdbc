@@ -63,4 +63,11 @@ Using one of the JDBC Implementations
 2. Use DDFManager.get("engine",dataSourceDescriptor) to obtain an instance of a JDBCDDFManager.
 3. Optionally set the "workspaceSchema" to a schema/namespace in your database to add write access. This will enable write operations on the database and also enable DDFManager.sql2ddf calls. Warning!! The sql2ddf calls create views on the workspaceSchema.
 
+Using AWS Implementations
+=====================================
+Change the ddf-conf/ddf.ini file in the repo and go to the aws section. 
+1. Change the jdbcUrl, jdbcUser and jdbcPassword of the AWS Redshift database. 
+2. Change redshiftClusterId, redshiftDatabase and redshiftIAMRoleARN(Amazon Resource Name (ARN)) to your corresponding credentials.
+3. Change s3StagingBucket to the s3 bucket where you want to store any batch prediction or datasources, change s3region to the region where your s3 bucket is hosted.
+4. Change awsAccessId and awsAccessKey according to your aws credentials.
 

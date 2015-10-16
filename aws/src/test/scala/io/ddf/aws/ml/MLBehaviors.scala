@@ -1,5 +1,7 @@
 package io.ddf.aws.ml
 
+import java.util
+
 import io.ddf.DDF
 import io.ddf.aws.AWSLoader
 import io.ddf.jdbc.{BaseBehaviors, Loader}
@@ -15,6 +17,22 @@ trait MLBehaviors extends BaseBehaviors {
     it should "do regression model computation" in {
       val ddf: DDF = airlineDDF
       val model: IModel = airlineDDF.ML.train("REGRESSION")
+      val prediction = airlineDDF.ML.applyModel(model)
+      assert(prediction.getNumColumns > 0)
+    }
+  }
+
+  def ddfWithRegressionParameters(implicit l: Loader): Unit = {
+    val airlineDDF = l.loadAirlineDDF()
+
+    it should "do regression model computation with parameters" in {
+      val ddf: DDF = airlineDDF
+      val map:java.util.Map[String,String] = new java.util.HashMap[String,String]()
+      map.put("sgd.l1RegularizationAmount","1.0E-08")
+      map.put("sgd.l2RegularizationAmount","1.0E-08")
+      map.put("sgd.maxPasses","10")
+      map.put("sgd.maxMLModelSizeInBytes","33554432")
+      val model: IModel = airlineDDF.ML.train("REGRESSION",map)
       val prediction = airlineDDF.ML.applyModel(model)
       assert(prediction.getNumColumns > 0)
     }
@@ -36,7 +54,7 @@ trait MLBehaviors extends BaseBehaviors {
 
     val mtcarDDF = l.loadMtCarsDDF()
 
-    it should "do binary model computation" in {
+    it should "do multiclass model computation" in {
       val ddf: DDF = mtcarDDF
       val model: IModel = mtcarDDF.ML.train("MULTICLASS")
       val prediction = mtcarDDF.ML.applyModel(model)

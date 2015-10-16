@@ -29,18 +29,19 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
 
   override def applyModel(model: IModel, hasLabels: Boolean, includeFeatures: Boolean): DDF = {
     val awsModel = model.asInstanceOf[AwsModel]
-    val tableName = Identifiers.newTableName(awsModel.getModelId)
+    val tableName = ddf.getTableName
     val sql = awsHelper.selectSql(tableName)
     val dataSourceId = awsMLHelper.createDataSourceFromRedShift(ddf.getSchema, sql, awsModel.getMLModelType)
     //this will wait for batch prediction to complete
     val batchId = awsMLHelper.createBatchPrediction(awsModel, dataSourceId)
     //last column is target column for supervised learning
     val targetColumn = ddf.getSchema.getColumns.asScala.last
-    val createTableSql = awsMLHelper.createTableSqlForModelType(awsModel.getMLModelType, tableName, targetColumn)
+    val newTableName = Identifiers.newTableName(batchId)
+    val createTableSql = awsMLHelper.createTableSqlForModelType(awsModel.getMLModelType, newTableName, targetColumn)
     val newDDF = ddf.getManager.asInstanceOf[AWSDDFManager].create(createTableSql)
     //now copy the results to redshift
     val manifestPath = awsHelper.createResultsManifestForRedshift(batchId)
-    val sqlToCopy = awsHelper.sqlToCopyFromS3ToRedshift(manifestPath, tableName)
+    val sqlToCopy = awsHelper.sqlToCopyFromS3ToRedshift(manifestPath, newTableName)
     implicit val cat = ddfManager.catalog
     DdlCommand(ddfManager.getConnection(), ddfManager.baseSchema, sqlToCopy)
     //and return the ddf
@@ -49,7 +50,7 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
 
   override def CVRandom(k: Int, trainingSize: Double, seed: lang.Long): java.util.List[CrossValidationSet] = {
     val crossValidation: CrossValidation = new CrossValidation(ddf)
-    crossValidation.CVRandom(k, trainingSize)
+    crossValidation.CVRandom(k, trainingSize, seed)
   }
 
   override def CVKFold(k: Int, seed: lang.Long): java.util.List[CrossValidationSet] = {
