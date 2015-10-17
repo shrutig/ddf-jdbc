@@ -49,7 +49,7 @@ object Identifiers {
 
   def newBatchPredictionId: String = generateEntityId("bp")
 
-  def newTableName(name: String): String = generateEntityId(name)
+  def newTableName: String = generateEntityId("tb")
 
   def newManifestId: String = generateEntityId("manifest")
 

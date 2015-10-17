@@ -53,5 +53,14 @@ class AwsHelper(s3Properties: S3Properties) {
   }
 
   def selectSql(tableName: String) = s"SELECT * FROM $tableName"
+
+  def truncate(value: String, length: Int): String = {
+    if (value != null && value.length() > length) {
+      value.substring(0, length)
+    }
+    else
+      value
+  }
+
 }
 

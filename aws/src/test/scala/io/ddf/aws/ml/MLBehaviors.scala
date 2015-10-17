@@ -1,7 +1,5 @@
 package io.ddf.aws.ml
 
-import java.util
-
 import io.ddf.{Factor, DDF}
 import io.ddf.aws.AWSLoader
 import io.ddf.content.Schema
@@ -35,7 +33,8 @@ trait MLBehaviors extends BaseBehaviors {
       val ddf: DDF = airlineDDF
       val map: java.util.Map[String, String] = new java.util.HashMap[String, String]()
       map.put("sgd.l1RegularizationAmount", "1.0E-08")
-      map.put("sgd.l2RegularizationAmount", "1.0E-08")
+      //map.put("sgd.l2RegularizationAmount", "1.0E-08")
+      // Use one of the 2 regularization parameters
       map.put("sgd.maxPasses", "10")
       map.put("sgd.maxMLModelSizeInBytes", "33554432")
       val model: IModel = ddf.ML.train("REGRESSION", map)
@@ -83,14 +82,24 @@ trait MLBehaviors extends BaseBehaviors {
 
     it should "do CVRandom computation" in {
       val ddf: DDF = airlineDDF
-      val crossValidationRandom = ddf.ML.CVRandom(2, 0.5, 3L)
-      assert(crossValidationRandom.size() == 2)
+      val crossValidationRandom = ddf.ML.CVRandom(2, 0.5, 3L) .asScala.toSeq
+      crossValidationRandom foreach {
+        crossValidationSet => println("test DDF size (" +crossValidationSet.getTestSet.getNumRows + ","
+          +crossValidationSet.getTestSet.getNumColumns + ")" +" train DDF size (" +crossValidationSet.getTrainSet
+          .getNumRows + "," + crossValidationSet.getTrainSet.getNumColumns + ")")
+      }
+      assert(crossValidationRandom.size == 2)
     }
 
     it should "do CVKFold computation" in {
       val ddf: DDF = airlineDDF
-      val crossValidationRandom = ddf.ML.CVKFold(2, 3L)
-      assert(crossValidationRandom.size() == 2)
+      val crossValidationRandom = ddf.ML.CVKFold(2, 3L).asScala.toSeq
+      crossValidationRandom foreach {
+        crossValidationSet => println("test DDF size (" +crossValidationSet.getTestSet.getNumRows + ","
+          +crossValidationSet.getTestSet.getNumColumns + ")" +" train DDF size (" +crossValidationSet.getTrainSet
+          .getNumRows + "," + crossValidationSet.getTrainSet.getNumColumns + ")")
+      }
+      assert(crossValidationRandom.size == 2)
     }
   }
 
@@ -101,6 +110,7 @@ trait MLBehaviors extends BaseBehaviors {
       val ddf: DDF = airlineDDF
       val model: IModel = ddf.ML.train("REGRESSION")
       val confusionMatrix = ddf.ML.getConfusionMatrix(model, 1.2)
+      confusionMatrix foreach (row => println(row.mkString(",")))
       assert(confusionMatrix.nonEmpty)
     }
   }
@@ -117,6 +127,7 @@ trait MLBehaviors extends BaseBehaviors {
     it should "do roc computation" in {
       val ddf: DDF = airlineDDF
       val rocMetric = ddf.getMLMetricsSupporter.roc(ddf, 1)
+      rocMetric.pred foreach  (row => println(row.mkString(",")))
       assert(rocMetric.auc > 0)
     }
   }

@@ -38,10 +38,14 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
     val batchId = awsMLHelper.createBatchPrediction(awsModel, dataSourceId)
     //last column is target column for supervised learning
     val targetColumn = ddf.getSchema.getColumns.asScala.last
-    val uniqueDDF: DDF = ddf.sql2ddf(s"SELECT DISTINCT $targetColumn FROM $tableName")
-    val uniqueTargetVal = uniqueDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
-      .asInstanceOf[SqlArrayResult].result map (row => row(0).toString + " float8") mkString (",")
-    val newTableName = Identifiers.newTableName(batchId)
+    val uniqueTargetVal = if (awsModel.getMLModelType equals MLModelType.MULTICLASS) {
+      ddf.setAsFactor(targetColumn.getName)
+      ddf.getSchemaHandler.computeFactorLevelsAndLevelCounts()
+      ddf.getSchema.getColumn(targetColumn.getName).getOptionalFactor.getLevels.asScala.map(value => "col_" + value + " " +
+        "float8").mkString(",")
+    }
+    else ""
+    val newTableName = Identifiers.newTableName
     val createTableSql = awsMLHelper.createTableSqlForModelType(awsModel.getMLModelType, newTableName, uniqueTargetVal)
     val newDDF = ddf.getManager.asInstanceOf[AWSDDFManager].create(createTableSql)
     //now copy the results to redshift
@@ -55,7 +59,7 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
 
   override def CVRandom(k: Int, trainingSize: Double, seed: lang.Long): java.util.List[CrossValidationSet] = {
     val crossValidation: CrossValidation = new CrossValidation(ddf)
-    crossValidation.CVRandom(k, trainingSize, seed)
+    crossValidation.CVRandom(k, trainingSize)
   }
 
   override def CVKFold(k: Int, seed: lang.Long): java.util.List[CrossValidationSet] = {
@@ -85,6 +89,9 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
   }
 
   def getConfusionMatrix(iModel: IModel, v: Double): Array[Array[Long]] = {
+    if (iModel.asInstanceOf[AwsModel].getMLModelType != MLModelType.REGRESSION) {
+      throw new DDFException("Confusion Matrix can only be evaluated for Regression model")
+    }
     val predictedDDF = ddf.ML.applyModel(iModel)
     val originalDDF = ddf
     val matrix = Array.ofDim[Long](2, 2)
