@@ -26,17 +26,29 @@ class MLMetricsSupporter(ddf: DDF) extends io.ddf.ml.AMLMetricsSupporter(ddf) {
   @throws(classOf[DDFException])
   override def roc(predictionDDF: DDF, alpha_length: Int): RocMetric = {
     val originalDDF = ddf
-    val model = ddf.ML.train("REGRESSION")
+    val model = ddf.ML.train("BINARY")
     //wait for model
     val predictedDDF: DDF = predictionDDF.ML.applyModel(model)
     val predictDDFAsSql = predictedDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
       .asInstanceOf[SqlArrayResult].result
-    val originalDDFAsSql = originalDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
-      .asInstanceOf[SqlArrayResult].result
-    val result = originalDDFAsSql map (row => row(row.length - 1)) zip (predictDDFAsSql map (row => row(row.length - 1)))
-    val matrix = result map { case (oldVal, newVal) => Array((List(oldVal) collect { case i: java.lang.Number => i
-      .doubleValue()
-    }).sum, newVal.asInstanceOf[Double])
+    val matrix = Array.ofDim[Double](alpha_length, 3)
+    for (count <- 1 to alpha_length; threshold = count / 1000) {
+      var tp = 0
+      var fp = 0
+      var tn = 0
+      var fn = 0
+      for (row <- predictDDFAsSql.indices) {
+        val oldVal = (List(predictDDFAsSql(row)(0)) collect { case i: java.lang.Number => i.intValue() }).sum
+        val newVal = predictDDFAsSql(row)(1).asInstanceOf[Int]
+        val score = predictDDFAsSql(row)(2).asInstanceOf[Double]
+        if (oldVal == 1 && score > threshold) tp = tp + 1
+        else if (oldVal == 1 && score < threshold) fn = fn + 1
+        else if (oldVal == 0 && score > threshold) fp = fp + 1
+        else tn = tn + 1
+      }
+      matrix(count - 1)(0) = threshold
+      matrix(count - 1)(1) = tp / (tp + fn)
+      matrix(count - 1)(2) = fp / (fp + tn)
     }
     val rocMetric = new RocMetric(matrix.toArray, 0.0)
     rocMetric.computeAUC()
@@ -48,7 +60,7 @@ class MLMetricsSupporter(ddf: DDF) extends io.ddf.ml.AMLMetricsSupporter(ddf) {
     val model = ddf.ML.train("REGRESSION")
     val awsModel = model.asInstanceOf[AwsModel]
     val sql = awsHelper.selectSql(testDDF.getTableName)
-    val dataSourceId = mlHelper.createDataSourceFromRedShift(ddf.getSchema, sql,awsModel.getMLModelType)
+    val dataSourceId = mlHelper.createDataSourceFromRedShift(ddf.getSchema, sql, awsModel.getMLModelType)
     mlHelper.getEvaluationMetrics(dataSourceId, awsModel.getModelId, awsModel.getMLModelType.toString)
   }
 }
