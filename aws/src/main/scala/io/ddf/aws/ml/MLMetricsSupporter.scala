@@ -32,7 +32,8 @@ class MLMetricsSupporter(ddf: DDF) extends io.ddf.ml.AMLMetricsSupporter(ddf) {
     val predictDDFAsSql = predictedDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
       .asInstanceOf[SqlArrayResult].result
     val matrix = Array.ofDim[Double](alpha_length, 3)
-    for (count <- 1 to alpha_length; threshold = count / 1000) {
+    for (count <- 1 to alpha_length) {
+      val threshold = count * 1.0 / alpha_length
       var tp = 0
       var fp = 0
       var tn = 0
