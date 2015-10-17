@@ -48,8 +48,8 @@ class MLMetricsSupporter(ddf: DDF) extends io.ddf.ml.AMLMetricsSupporter(ddf) {
         else tn = tn + 1
       }
       matrix(count - 1)(0) = threshold
-      matrix(count - 1)(1) = tp / (tp + fn)
-      matrix(count - 1)(2) = fp / (fp + tn)
+      matrix(count - 1)(1) = tp*1.0 / (tp + fn)
+      matrix(count - 1)(2) = fp*1.0 / (fp + tn)
     }
     val rocMetric = new RocMetric(matrix.toArray, 0.0)
     rocMetric.computeAUC()
