@@ -2,11 +2,14 @@ package io.ddf.aws.ml
 
 import java.util
 
-import io.ddf.DDF
+import io.ddf.{Factor, DDF}
 import io.ddf.aws.AWSLoader
+import io.ddf.content.Schema
+import io.ddf.jdbc.content.{SqlArrayResult, Representations}
 import io.ddf.jdbc.{BaseBehaviors, Loader}
 import io.ddf.ml.IModel
 import org.scalatest.FlatSpec
+import scala.collection.JavaConverters._
 
 trait MLBehaviors extends BaseBehaviors {
   this: FlatSpec =>
@@ -18,6 +21,9 @@ trait MLBehaviors extends BaseBehaviors {
       val ddf: DDF = airlineDDF
       val model: IModel = ddf.ML.train("REGRESSION")
       val prediction = ddf.ML.applyModel(model)
+      val predictDDFAsSql = prediction.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
+        .asInstanceOf[SqlArrayResult].result
+      predictDDFAsSql foreach (row => println(row map (cell => cell.toString) mkString (",")))
       assert(prediction.getNumColumns > 0)
     }
   }
@@ -27,24 +33,31 @@ trait MLBehaviors extends BaseBehaviors {
 
     it should "do regression model computation with parameters" in {
       val ddf: DDF = airlineDDF
-      val map:java.util.Map[String,String] = new java.util.HashMap[String,String]()
-      map.put("sgd.l1RegularizationAmount","1.0E-08")
-      map.put("sgd.l2RegularizationAmount","1.0E-08")
-      map.put("sgd.maxPasses","10")
-      map.put("sgd.maxMLModelSizeInBytes","33554432")
-      val model: IModel = ddf.ML.train("REGRESSION",map)
+      val map: java.util.Map[String, String] = new java.util.HashMap[String, String]()
+      map.put("sgd.l1RegularizationAmount", "1.0E-08")
+      map.put("sgd.l2RegularizationAmount", "1.0E-08")
+      map.put("sgd.maxPasses", "10")
+      map.put("sgd.maxMLModelSizeInBytes", "33554432")
+      val model: IModel = ddf.ML.train("REGRESSION", map)
       val prediction = ddf.ML.applyModel(model)
+      val predictDDFAsSql = prediction.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
+        .asInstanceOf[SqlArrayResult].result
+      predictDDFAsSql foreach (row => println(row map (cell => cell.toString) mkString (",")))
       assert(prediction.getNumColumns > 0)
     }
   }
 
   def ddfWithBinary(implicit l: Loader): Unit = {
-    val mtcarDDF = l.loadMtCarsDDF()
+    val mtcarDDF = l.loadMtCarsDDF().sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM ddf://adatao/mtcars")
 
     it should "do binary model computation" in {
-      val ddf: DDF = mtcarDDF.sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM ddf://adatao/mtcars")
+      print(mtcarDDF.getUri)
+      val ddf: DDF = mtcarDDF
       val model: IModel = ddf.ML.train("BINARY")
       val prediction = ddf.ML.applyModel(model)
+      val predictDDFAsSql = prediction.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
+        .asInstanceOf[SqlArrayResult].result
+      predictDDFAsSql foreach (row => println(row map (cell => cell.toString) mkString (",")))
       assert(prediction.getNumColumns > 0)
     }
 
@@ -58,6 +71,9 @@ trait MLBehaviors extends BaseBehaviors {
       val ddf: DDF = mtcarDDF
       val model: IModel = ddf.ML.train("MULTICLASS")
       val prediction = ddf.ML.applyModel(model)
+      val predictDDFAsSql = prediction.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
+        .asInstanceOf[SqlArrayResult].result
+      predictDDFAsSql foreach (row => println(row map (cell => cell.toString) mkString (",")))
       assert(prediction.getNumColumns > 0)
     }
   }
@@ -94,14 +110,14 @@ trait MLBehaviors extends BaseBehaviors {
 
     it should "do rmse evaluation" in {
       val ddf: DDF = airlineDDF
-      val rmse = ddf.getMLMetricsSupporter.rmse(ddf,true)
+      val rmse = ddf.getMLMetricsSupporter.rmse(ddf, true)
       assert(rmse > 0)
     }
 
-    it should "do roc computation" in{
+    it should "do roc computation" in {
       val ddf: DDF = airlineDDF
-      val rocMetric = ddf.getMLMetricsSupporter.roc(ddf,1)
-      assert(rocMetric.auc >0)
+      val rocMetric = ddf.getMLMetricsSupporter.roc(ddf, 1)
+      assert(rocMetric.auc > 0)
     }
   }
 

@@ -23,7 +23,7 @@ class AwsMLHelper(awsProperties: AwsProperties) {
       .withMLModelName(modelId)
       .withMLModelType(modelType)
       .withTrainingDataSourceId(trainDataSourceId)
-    if (parameters != Map[String, String]()) {
+    if (!parameters.isEmpty) {
       request.withParameters(parameters)
     }
     client.createMLModel(request)
@@ -75,13 +75,11 @@ class AwsMLHelper(awsProperties: AwsProperties) {
     }
   }
 
-  def createTableSqlForModelType(mLModelType: MLModelType, tableName: String, targetColumn: Schema.Column): String = {
+  def createTableSqlForModelType(mLModelType: MLModelType, tableName: String, uniqueTargetVal: String): String = {
     mLModelType match {
       case MLModelType.BINARY => s"CREATE TABLE $tableName (trueLabel int4, bestAnswer int4,score float8)"
       case MLModelType.REGRESSION => s"CREATE TABLE $tableName (trueLabel float8, score float8)"
-      case MLModelType.MULTICLASS =>
-        val columns = targetColumn.getOptionalFactor.getLevels.asScala.mkString(",")
-        s"CREATE TABLE $tableName (trueLabel varchar, $columns)"
+      case MLModelType.MULTICLASS => s"CREATE TABLE $tableName (trueLabel varchar, $uniqueTargetVal)"
     }
   }
 

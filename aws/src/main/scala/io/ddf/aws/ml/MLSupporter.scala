@@ -6,6 +6,7 @@ import com.amazonaws.services.machinelearning.model.MLModelType
 import io.ddf.DDF
 import io.ddf.aws.AWSDDFManager
 import io.ddf.aws.ml.util.CrossValidation
+import io.ddf.content.SqlResult
 import io.ddf.exception.DDFException
 import io.ddf.jdbc.content.{DdlCommand, Representations, SqlArrayResult}
 import io.ddf.misc.ADDFFunctionalGroupHandler
@@ -37,8 +38,11 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
     val batchId = awsMLHelper.createBatchPrediction(awsModel, dataSourceId)
     //last column is target column for supervised learning
     val targetColumn = ddf.getSchema.getColumns.asScala.last
+    val uniqueDDF: DDF = ddf.sql2ddf(s"SELECT DISTINCT $targetColumn FROM $tableName")
+    val uniqueTargetVal = uniqueDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
+      .asInstanceOf[SqlArrayResult].result map (row => row(0).toString + " float8") mkString (",")
     val newTableName = Identifiers.newTableName(batchId)
-    val createTableSql = awsMLHelper.createTableSqlForModelType(awsModel.getMLModelType, newTableName, targetColumn)
+    val createTableSql = awsMLHelper.createTableSqlForModelType(awsModel.getMLModelType, newTableName, uniqueTargetVal)
     val newDDF = ddf.getManager.asInstanceOf[AWSDDFManager].create(createTableSql)
     //now copy the results to redshift
     val manifestPath = awsHelper.createResultsManifestForRedshift(batchId)
