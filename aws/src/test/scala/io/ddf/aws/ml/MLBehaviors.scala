@@ -117,6 +117,7 @@ trait MLBehaviors extends BaseBehaviors {
 
   def ddfWithMetrics(implicit l: Loader): Unit = {
     val airlineDDF: DDF = l.loadAirlineDDF()
+    val mtcarsDDF :DDF = l.loadMtCarsDDF().sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM ddf://adatao/mtcars")
 
     it should "do rmse evaluation" in {
       val ddf: DDF = airlineDDF
@@ -125,7 +126,7 @@ trait MLBehaviors extends BaseBehaviors {
     }
 
     it should "do roc computation" in {
-      val ddf: DDF = airlineDDF
+      val ddf: DDF = mtcarsDDF
       val rocMetric = ddf.getMLMetricsSupporter.roc(ddf, 1)
       rocMetric.pred foreach  (row => println(row.mkString(",")))
       assert(rocMetric.auc > 0)
