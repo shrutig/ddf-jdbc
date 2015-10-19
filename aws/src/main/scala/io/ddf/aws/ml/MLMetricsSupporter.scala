@@ -42,9 +42,9 @@ class MLMetricsSupporter(ddf: DDF) extends io.ddf.ml.AMLMetricsSupporter(ddf) {
         val oldVal = (List(predictDDFAsSql(row)(0)) collect { case i: java.lang.Number => i.intValue() }).sum
         val newVal = predictDDFAsSql(row)(1).asInstanceOf[Int]
         val score = predictDDFAsSql(row)(2).asInstanceOf[Double]
-        if (oldVal == 1 && score > threshold) truePositive = truePositive + 1
+        if (oldVal == 1 && (score > threshold || score == threshold)) truePositive = truePositive + 1
         else if (oldVal == 1 && score < threshold) falseNegative = falseNegative + 1
-        else if (oldVal == 0 && score > threshold) falsePositive = falsePositive + 1
+        else if (oldVal == 0 && (score > threshold || score == threshold)) falsePositive = falsePositive + 1
         else trueNegative = trueNegative + 1
       }
       matrix(count - 1)(0) = threshold

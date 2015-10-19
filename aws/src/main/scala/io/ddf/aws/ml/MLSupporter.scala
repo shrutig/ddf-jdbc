@@ -98,18 +98,17 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
 
     val predictDDFAsSql = predictedDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
       .asInstanceOf[SqlArrayResult].result
-    val originalDDFAsSql = originalDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
-      .asInstanceOf[SqlArrayResult].result
-    val result = originalDDFAsSql map (row => row(row.length - 1)) zip (predictDDFAsSql map (row => row(row.length - 1)))
+    val result = predictDDFAsSql map (row => row(row.length - 2)) zip (predictDDFAsSql map (row => row(row.length -
+      1)))
 
     for (row <- result.indices) {
       val newVal = result(row)._2.asInstanceOf[Double]
       val oldVal = (List(result(row)._1) collect { case i: java.lang.Number => i.doubleValue() }).sum
-      if (oldVal < v && newVal < v)
+      if ((oldVal < v || oldVal == v) && (newVal < v || newVal == v))
         matrix(0)(0) = matrix(0)(0) + 1
-      else if (oldVal < v && newVal > v)
+      else if ((oldVal < v || oldVal == v) && newVal > v)
         matrix(0)(1) = matrix(0)(1) + 1
-      else if (oldVal > v && newVal < v)
+      else if (oldVal > v && (newVal < v || newVal == v))
         matrix(1)(0) = matrix(1)(0) + 1
       else
         matrix(1)(1) = matrix(1)(1) + 1
