@@ -6,7 +6,6 @@ import com.amazonaws.services.machinelearning.model.MLModelType
 import io.ddf.DDF
 import io.ddf.aws.AWSDDFManager
 import io.ddf.aws.ml.util.CrossValidation
-import io.ddf.content.SqlResult
 import io.ddf.exception.DDFException
 import io.ddf.jdbc.content.{DdlCommand, Representations, SqlArrayResult}
 import io.ddf.misc.ADDFFunctionalGroupHandler
@@ -85,7 +84,12 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
 
     //this will wait for model creation to complete
     val modelId = awsMLHelper.createModel(dataSourceId, mlModelType, paramsMap)
-    new AwsModel(modelId, mlModelType)
+
+    mlModelType match {
+      case MLModelType.BINARY => Model(BinaryClassification(awsMLHelper, ddf.getSchema, modelId, mlModelType))
+      case MLModelType.MULTICLASS => Model(MultiClassClassification(awsMLHelper, ddf.getSchema, modelId, mlModelType))
+      case MLModelType.REGRESSION => Model(LinearRegression(awsMLHelper, ddf.getSchema, modelId, mlModelType))
+    }
   }
 
   def getConfusionMatrix(iModel: IModel, v: Double): Array[Array[Long]] = {
