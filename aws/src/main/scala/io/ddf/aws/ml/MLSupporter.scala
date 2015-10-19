@@ -98,9 +98,8 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
 
     val predictDDFAsSql = predictedDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
       .asInstanceOf[SqlArrayResult].result
-    val originalDDFAsSql = originalDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
-      .asInstanceOf[SqlArrayResult].result
-    val result = originalDDFAsSql map (row => row(row.length - 1)) zip (predictDDFAsSql map (row => row(row.length - 1)))
+    val result = predictDDFAsSql map (row => row(row.length - 2)) zip (predictDDFAsSql map (row => row(row.length -
+      1)))
 
     for (row <- result.indices) {
       val newVal = result(row)._2.asInstanceOf[Double]
