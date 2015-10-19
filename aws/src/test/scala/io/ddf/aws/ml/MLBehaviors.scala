@@ -82,10 +82,10 @@ trait MLBehaviors extends BaseBehaviors {
 
     it should "do CVRandom computation" in {
       val ddf: DDF = airlineDDF
-      val crossValidationRandom = ddf.ML.CVRandom(2, 0.5, 3L) .asScala.toSeq
+      val crossValidationRandom = ddf.ML.CVRandom(2, 0.5, 3L).asScala.toSeq
       crossValidationRandom foreach {
-        crossValidationSet => println("test DDF size (" +crossValidationSet.getTestSet.getNumRows + ","
-          +crossValidationSet.getTestSet.getNumColumns + ")" +" train DDF size (" +crossValidationSet.getTrainSet
+        crossValidationSet => println("test DDF size (" + crossValidationSet.getTestSet.getNumRows + ","
+          + crossValidationSet.getTestSet.getNumColumns + ")" + " train DDF size (" + crossValidationSet.getTrainSet
           .getNumRows + "," + crossValidationSet.getTrainSet.getNumColumns + ")")
       }
       assert(crossValidationRandom.size == 2)
@@ -95,8 +95,8 @@ trait MLBehaviors extends BaseBehaviors {
       val ddf: DDF = airlineDDF
       val crossValidationRandom = ddf.ML.CVKFold(2, 3L).asScala.toSeq
       crossValidationRandom foreach {
-        crossValidationSet => println("test DDF size (" +crossValidationSet.getTestSet.getNumRows + ","
-          +crossValidationSet.getTestSet.getNumColumns + ")" +" train DDF size (" +crossValidationSet.getTrainSet
+        crossValidationSet => println("test DDF size (" + crossValidationSet.getTestSet.getNumRows + ","
+          + crossValidationSet.getTestSet.getNumColumns + ")" + " train DDF size (" + crossValidationSet.getTrainSet
           .getNumRows + "," + crossValidationSet.getTrainSet.getNumColumns + ")")
       }
       assert(crossValidationRandom.size == 2)
@@ -117,7 +117,7 @@ trait MLBehaviors extends BaseBehaviors {
 
   def ddfWithMetrics(implicit l: Loader): Unit = {
     val airlineDDF: DDF = l.loadAirlineDDF()
-    val mtcarsDDF :DDF = l.loadMtCarsDDF().sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM ddf://adatao/mtcars")
+    val mtcarsDDF: DDF = l.loadMtCarsDDF().sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM ddf://adatao/mtcars")
 
     it should "do rmse evaluation" in {
       val ddf: DDF = airlineDDF
@@ -128,8 +128,8 @@ trait MLBehaviors extends BaseBehaviors {
     it should "do roc computation" in {
       val ddf: DDF = mtcarsDDF
       val rocMetric = ddf.getMLMetricsSupporter.roc(ddf, 10000)
-      rocMetric.pred foreach  (row => println(row.mkString(",")))
-      assert(!(rocMetric.auc < 0) )
+      rocMetric.pred foreach (row => println(row.mkString(",")))
+      assert(!(rocMetric.auc < 0))
     }
   }
 

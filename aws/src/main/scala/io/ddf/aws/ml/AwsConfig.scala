@@ -9,7 +9,7 @@ import io.ddf.jdbc.content.{Representations, TableNameRepresentation}
 import scala.util.Random
 
 
-object AwsConfig{
+object AwsConfig {
 
   def getPropertiesForAmazonML(ddfManager: AWSDDFManager) = {
     val credentials = ddfManager.credentials
@@ -21,12 +21,12 @@ object AwsConfig{
     val s3Region = ddfManager.getRequiredValue("s3Region")
     val s3BucketName = ddfManager.getRequiredValue("s3BucketName")
     val s3Key = ddfManager.getRequiredValue("s3Key")
-    val s3StagingURI = "s3://"+s3BucketName+"/"+s3Key
+    val s3StagingURI = "s3://" + s3BucketName + "/" + s3Key
 
     val awsCredentials = new BasicAWSCredentials(accessId, accessKey)
     val redshiftDatabase = new RedshiftDatabase().withDatabaseName(redshiftDatabaseName).withClusterIdentifier(redshiftClusterId)
     val redshiftDatabaseCredentials = new RedshiftDatabaseCredentials().withUsername(credentials.getUsername).withPassword(credentials.getPassword)
-    val s3Properties = S3Properties(awsCredentials, s3StagingURI, s3Region,s3BucketName,s3Key)
+    val s3Properties = S3Properties(awsCredentials, s3StagingURI, s3Region, s3BucketName, s3Key)
     AwsProperties(awsCredentials, redshiftDatabase, redshiftDatabaseCredentials, credentials, s3Properties, roleArn)
   }
 }
@@ -60,8 +60,8 @@ object Identifiers {
 case class S3Properties(credentials: BasicAWSCredentials,
                         s3StagingURI: String,
                         s3Region: String,
-                         s3BucketName:String,
-                         s3Key:String)
+                        s3BucketName: String,
+                        s3Key: String)
 
 case class AwsProperties(credentials: BasicAWSCredentials,
                          redshiftDatabase: RedshiftDatabase,
