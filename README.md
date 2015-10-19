@@ -65,7 +65,8 @@ Using one of the JDBC Implementations
 
 Using AWS Implementation
 =====================================
-Change the ddf-conf/ddf.ini file in the repo and go to the aws section. 
+Change the ddf-conf/ddf.ini file in the repo and go to the aws section.
+ 
 1. Change the jdbcUrl, jdbcUser and jdbcPassword of the AWS Redshift database. 
 2. Change redshiftClusterId, redshiftDatabase and redshiftIAMRoleARN(Amazon Resource Name (ARN)) to your corresponding credentials.
 3. Change s3bucketName to the s3 bucket where you want to store any batch prediction or datasources, s3key to the full dir name where you want to store batch prediction or datasources and change s3region to the region where your s3 bucket is hosted.
