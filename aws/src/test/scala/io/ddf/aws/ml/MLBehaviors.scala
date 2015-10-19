@@ -127,7 +127,7 @@ trait MLBehaviors extends BaseBehaviors {
 
     it should "do roc computation" in {
       val ddf: DDF = mtcarsDDF
-      val rocMetric = ddf.getMLMetricsSupporter.roc(ddf, 1000)
+      val rocMetric = ddf.getMLMetricsSupporter.roc(ddf, 10000)
       rocMetric.pred foreach  (row => println(row.mkString(",")))
       assert(!(rocMetric.auc < 0) )
     }
