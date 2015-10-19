@@ -17,7 +17,7 @@ class AwsHelper(s3Properties: S3Properties) {
  * We are making a modified manifest as Redshift does not like the one that AWS/ML made. Stupid but true!
  */
   def makeModifiedManifestString(batchId: String): String = {
-    val obj: InputStream = s3Client.getObject(s3Properties.s3bucketName, s3Properties.s3key + "batch-prediction/" +
+    val obj: InputStream = s3Client.getObject(s3Properties.s3BucketName, s3Properties.s3Key + "batch-prediction/" +
       batchId + ".manifest") getObjectContent()
     val oldManifest = Source.fromInputStream(obj).mkString
     val allEntries = oldManifest.trim.stripPrefix("{").stripSuffix("}")
@@ -29,7 +29,7 @@ class AwsHelper(s3Properties: S3Properties) {
 
   def createResultsManifestForRedshift(batchId: String): String = {
     val newManifest: String = makeModifiedManifestString(batchId)
-    uploadStringToS3(newManifest, s3Properties.s3key + batchId + ".manifest", s3Properties.s3bucketName)
+    uploadStringToS3(newManifest, s3Properties.s3Key + batchId + ".manifest", s3Properties.s3BucketName)
     val url = s3Properties.s3StagingURI + batchId + ".manifest"
     url
   }

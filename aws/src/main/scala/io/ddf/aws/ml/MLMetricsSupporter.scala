@@ -34,22 +34,22 @@ class MLMetricsSupporter(ddf: DDF) extends io.ddf.ml.AMLMetricsSupporter(ddf) {
     val matrix = Array.ofDim[Double](alpha_length, 3)
     for (count <- 1 to alpha_length) {
       val threshold = count * 1.0 / alpha_length
-      var tp = 0
-      var fp = 0
-      var tn = 0
-      var fn = 0
+      var truePositive = 0
+      var falsePositive = 0
+      var trueNegative = 0
+      var falseNegative = 0
       for (row <- predictDDFAsSql.indices) {
         val oldVal = (List(predictDDFAsSql(row)(0)) collect { case i: java.lang.Number => i.intValue() }).sum
         val newVal = predictDDFAsSql(row)(1).asInstanceOf[Int]
         val score = predictDDFAsSql(row)(2).asInstanceOf[Double]
-        if (oldVal == 1 && score > threshold) tp = tp + 1
-        else if (oldVal == 1 && score < threshold) fn = fn + 1
-        else if (oldVal == 0 && score > threshold) fp = fp + 1
-        else tn = tn + 1
+        if (oldVal == 1 && score > threshold) truePositive = truePositive + 1
+        else if (oldVal == 1 && score < threshold) falseNegative = falseNegative + 1
+        else if (oldVal == 0 && score > threshold) falsePositive = falsePositive + 1
+        else trueNegative = trueNegative + 1
       }
       matrix(count - 1)(0) = threshold
-      matrix(count - 1)(1) = tp*1.0 / (tp + fn)
-      matrix(count - 1)(2) = fp*1.0 / (fp + tn)
+      matrix(count - 1)(1) = truePositive * 1.0 / (truePositive + falseNegative)
+      matrix(count - 1)(2) = falsePositive * 1.0 / (falsePositive + trueNegative)
     }
     val rocMetric = new RocMetric(matrix.toArray, 0.0)
     rocMetric.computeAUC()
