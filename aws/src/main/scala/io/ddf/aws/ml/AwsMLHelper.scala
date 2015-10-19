@@ -23,7 +23,7 @@ class AwsMLHelper(awsProperties: AwsProperties) {
       .withMLModelName(modelId)
       .withMLModelType(modelType)
       .withTrainingDataSourceId(trainDataSourceId)
-    if (parameters != null) {
+    if (!parameters.isEmpty) {
       request.withParameters(parameters)
     }
     client.createMLModel(request)
@@ -33,14 +33,14 @@ class AwsMLHelper(awsProperties: AwsProperties) {
   }
 
 
-  def createDataSourceFromRedShift(schema: Schema, sqlQuery: String,mLModelType: MLModelType): String = {
+  def createDataSourceFromRedShift(schema: Schema, sqlQuery: String, mLModelType: MLModelType): String = {
     val dataSourceId = Identifiers.newDataSourceId
     val dataSpec = new RedshiftDataSpec()
       .withDatabaseInformation(awsProperties.redshiftDatabase)
       .withDatabaseCredentials(awsProperties.redshiftDatabaseCredentials)
       .withSelectSqlQuery(sqlQuery)
-      .withS3StagingLocation(awsProperties.s3Properties.s3StagingBucket)
-      .withDataSchema(getSchemaAttributeDataSource(schema,mLModelType))
+      .withS3StagingLocation(awsProperties.s3Properties.s3StagingURI)
+      .withDataSchema(getSchemaAttributeDataSource(schema, mLModelType))
     val request = new CreateDataSourceFromRedshiftRequest()
       .withComputeStatistics(true)
       .withDataSourceId(dataSourceId)
@@ -50,14 +50,14 @@ class AwsMLHelper(awsProperties: AwsProperties) {
     dataSourceId
   }
 
-  def getSchemaAttributeDataSource(schema: Schema,mLModelType: MLModelType): String = {
+  def getSchemaAttributeDataSource(schema: Schema, mLModelType: MLModelType): String = {
     val columns = schema.getColumns.asScala
     //for supervised learning last column is the target column
     val target = columns.last.getName
     val targetType = getTargetAttributeType(mLModelType)
     val listColumns = columns map (u => (u.getName, attributeTypeFromColumnClass(u.getColumnClass)))
     val attributes = listColumns.map { case (name, attrType) =>
-      val actualType = if(name.equals(target)) targetType else attrType
+      val actualType = if (name.equals(target)) targetType else attrType
       "{\"attributeName\":" + "\"" + name + "\",\"attributeType\": \"" + actualType + "\"\n}"
     }.mkString(",")
 
@@ -75,17 +75,15 @@ class AwsMLHelper(awsProperties: AwsProperties) {
     }
   }
 
-  def createTableSqlForModelType(mLModelType: MLModelType, tableName: String, targetColumn: Schema.Column): String = {
+  def createTableSqlForModelType(mLModelType: MLModelType, tableName: String, uniqueTargetVal: String): String = {
     mLModelType match {
-      case MLModelType.BINARY => s"CREATE TABLE $tableName (bestAnswer int4,score float8)"
-      case MLModelType.REGRESSION => s"CREATE TABLE $tableName (score float8)"
-      case MLModelType.MULTICLASS =>
-        val columns = targetColumn.getOptionalFactor.getLevels.asScala.mkString(",")
-        s"CREATE TABLE $tableName ($columns)"
+      case MLModelType.BINARY => s"CREATE TABLE $tableName (trueLabel int4, bestAnswer int4,score float8)"
+      case MLModelType.REGRESSION => s"CREATE TABLE $tableName (trueLabel float8, score float8)"
+      case MLModelType.MULTICLASS => s"CREATE TABLE $tableName (trueLabel varchar, $uniqueTargetVal)"
     }
   }
 
-  def getTargetAttributeType(mLModelType: MLModelType): String ={
+  def getTargetAttributeType(mLModelType: MLModelType): String = {
     mLModelType match {
       case MLModelType.BINARY => "BINARY"
       case MLModelType.REGRESSION => "NUMERIC"
@@ -101,7 +99,7 @@ class AwsMLHelper(awsProperties: AwsProperties) {
       .withBatchPredictionId(batchPredictionId)
       .withBatchPredictionName("Batch Prediction for " + dataSourceId)
       .withMLModelId(awsModel.getModelId)
-      .withOutputUri(awsProperties.s3Properties.s3StagingBucket)
+      .withOutputUri(awsProperties.s3Properties.s3StagingURI)
       .withBatchPredictionDataSourceId(dataSourceId)
     client.createBatchPrediction(bpRequest)
     //wait for this to complete
@@ -123,7 +121,8 @@ class AwsMLHelper(awsProperties: AwsProperties) {
   }
 
 
-  def waitForCompletion(entityId: String, entityType: String, delay: FiniteDuration = FiniteDuration(2, TimeUnit.SECONDS)): Unit = {
+  def waitForCompletion(entityId: String, entityType: String, delay: FiniteDuration = FiniteDuration(60, TimeUnit
+    .SECONDS)): Unit = {
     var terminated = false
     def getStatus = {
       entityType match {

@@ -18,13 +18,15 @@ object AwsConfig{
     val redshiftDatabaseName = ddfManager.getRequiredValue("redshiftDatabase")
     val redshiftClusterId = ddfManager.getRequiredValue("redshiftClusterId")
     val roleArn = ddfManager.getRequiredValue("redshiftIAMRoleARN")
-    val s3StagingBucket = ddfManager.getRequiredValue("s3StagingBucket")
     val s3Region = ddfManager.getRequiredValue("s3Region")
+    val s3bucketName = ddfManager.getRequiredValue("s3bucketName")
+    val s3key = ddfManager.getRequiredValue("s3key")
+    val s3StagingURI = "s3://"+s3bucketName+"/"+s3key
 
     val awsCredentials = new BasicAWSCredentials(accessId, accessKey)
     val redshiftDatabase = new RedshiftDatabase().withDatabaseName(redshiftDatabaseName).withClusterIdentifier(redshiftClusterId)
     val redshiftDatabaseCredentials = new RedshiftDatabaseCredentials().withUsername(credentials.getUsername).withPassword(credentials.getPassword)
-    val s3Properties = S3Properties(awsCredentials, s3StagingBucket, s3Region)
+    val s3Properties = S3Properties(awsCredentials, s3StagingURI, s3Region,s3bucketName,s3key)
     AwsProperties(awsCredentials, redshiftDatabase, redshiftDatabaseCredentials, credentials, s3Properties, roleArn)
   }
 }
@@ -47,7 +49,7 @@ object Identifiers {
 
   def newBatchPredictionId: String = generateEntityId("bp")
 
-  def newTableName(model: String): String = generateEntityId(model)
+  def newTableName: String = generateEntityId("tb")
 
   def newManifestId: String = generateEntityId("manifest")
 
@@ -56,8 +58,10 @@ object Identifiers {
 }
 
 case class S3Properties(credentials: BasicAWSCredentials,
-                        s3StagingBucket: String,
-                        s3Region: String)
+                        s3StagingURI: String,
+                        s3Region: String,
+                         s3bucketName:String,
+                         s3key:String)
 
 case class AwsProperties(credentials: BasicAWSCredentials,
                          redshiftDatabase: RedshiftDatabase,

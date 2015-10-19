@@ -6,6 +6,8 @@ import com.amazonaws.services.machinelearning.model.MLModelType
 import io.ddf.DDF
 import io.ddf.aws.AWSDDFManager
 import io.ddf.aws.ml.util.CrossValidation
+import io.ddf.content.SqlResult
+import io.ddf.exception.DDFException
 import io.ddf.jdbc.content.{DdlCommand, Representations, SqlArrayResult}
 import io.ddf.misc.ADDFFunctionalGroupHandler
 import io.ddf.ml.{CrossValidationSet, IModel, ISupportML}
@@ -29,18 +31,26 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
 
   override def applyModel(model: IModel, hasLabels: Boolean, includeFeatures: Boolean): DDF = {
     val awsModel = model.asInstanceOf[AwsModel]
-    val tableName = Identifiers.newTableName(awsModel.getModelId)
+    val tableName = ddf.getTableName
     val sql = awsHelper.selectSql(tableName)
     val dataSourceId = awsMLHelper.createDataSourceFromRedShift(ddf.getSchema, sql, awsModel.getMLModelType)
     //this will wait for batch prediction to complete
     val batchId = awsMLHelper.createBatchPrediction(awsModel, dataSourceId)
     //last column is target column for supervised learning
     val targetColumn = ddf.getSchema.getColumns.asScala.last
-    val createTableSql = awsMLHelper.createTableSqlForModelType(awsModel.getMLModelType, tableName, targetColumn)
+    val uniqueTargetVal = if (awsModel.getMLModelType equals MLModelType.MULTICLASS) {
+      ddf.setAsFactor(targetColumn.getName)
+      ddf.getSchemaHandler.computeFactorLevelsAndLevelCounts()
+      ddf.getSchema.getColumn(targetColumn.getName).getOptionalFactor.getLevels.asScala.map(value => "col_" + value + " " +
+        "float8").mkString(",")
+    }
+    else ""
+    val newTableName = Identifiers.newTableName
+    val createTableSql = awsMLHelper.createTableSqlForModelType(awsModel.getMLModelType, newTableName, uniqueTargetVal)
     val newDDF = ddf.getManager.asInstanceOf[AWSDDFManager].create(createTableSql)
     //now copy the results to redshift
     val manifestPath = awsHelper.createResultsManifestForRedshift(batchId)
-    val sqlToCopy = awsHelper.sqlToCopyFromS3ToRedshift(manifestPath, tableName)
+    val sqlToCopy = awsHelper.sqlToCopyFromS3ToRedshift(manifestPath, newTableName)
     implicit val cat = ddfManager.catalog
     DdlCommand(ddfManager.getConnection(), ddfManager.baseSchema, sqlToCopy)
     //and return the ddf
@@ -59,7 +69,12 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
 
   override def train(trainMethodKey: String, args: AnyRef*): IModel = {
     val sql = awsHelper.selectSql(ddf.getTableName)
-    val mlModelType = MLModelType.valueOf(trainMethodKey)
+    val mlModelType = try {
+      MLModelType.valueOf(trainMethodKey)
+    }
+    catch {
+      case e: IllegalArgumentException => throw new DDFException(e)
+    }
 
     val dataSourceId = awsMLHelper.createDataSourceFromRedShift(ddf.getSchema, sql, mlModelType)
     val paramsMap = if (args.length < 1 || args(0) == null) {
@@ -74,6 +89,9 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
   }
 
   def getConfusionMatrix(iModel: IModel, v: Double): Array[Array[Long]] = {
+    if (iModel.asInstanceOf[AwsModel].getMLModelType != MLModelType.REGRESSION) {
+      throw new DDFException("Confusion Matrix can only be evaluated for Regression model")
+    }
     val predictedDDF = ddf.ML.applyModel(iModel)
     val originalDDF = ddf
     val matrix = Array.ofDim[Long](2, 2)

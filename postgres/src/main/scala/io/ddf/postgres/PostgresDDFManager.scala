@@ -159,6 +159,7 @@ object PostgresCatalog extends Catalog {
       case "float8" => ColumnType.DOUBLE
       case "varchar"=> ColumnType.STRING
       case "varchar2"=> ColumnType.STRING
+      case "double precision"=> ColumnType.DOUBLE
       case "name"=> ColumnType.STRING
       case "text"=> ColumnType.STRING
       case "date"=> ColumnType.DATE
