@@ -185,7 +185,7 @@ class AwsMLHelper(awsProperties: AwsProperties) {
     val predictEndpointRequest = new CreateRealtimeEndpointRequest()
       .withMLModelId(modelId)
     val predictEndpointResult = client.createRealtimeEndpoint(predictEndpointRequest)
-    waitForPredictEndpoint("predict endpoint" + modelId)
+    waitForPredictEndpoint(modelId)
     val map: java.util.Map[String, String] = new java.util.HashMap[String, String]()
     val predictEndPoint = predictEndpointResult.getRealtimeEndpointInfo.getEndpointUrl
     val columns = awsModel.getSchema.getColumnNames.asScala
