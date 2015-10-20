@@ -93,7 +93,7 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
   }
 
   def getConfusionMatrix(iModel: IModel, v: Double): Array[Array[Long]] = {
-    if (iModel.asInstanceOf[AwsModel].getMLModelType != MLModelType.REGRESSION) {
+    if (iModel.getRawModel.asInstanceOf[AwsModel].getMLModelType != MLModelType.REGRESSION) {
       throw new DDFException("Confusion Matrix can only be evaluated for Regression model")
     }
     val predictedDDF = ddf.ML.applyModel(iModel)
