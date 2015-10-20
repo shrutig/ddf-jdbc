@@ -166,4 +166,23 @@ class AwsMLHelper(awsProperties: AwsProperties) {
     answer get parameter toDouble
   }
 
+  def predict(inputs: Seq[_], awsModel: AwsModel): Either[Float, String] = {
+    val modelId = awsModel.getModelId
+    val prediction = new PredictRequest()
+    val predictEndPoint = client.createRealtimeEndpoint(new CreateRealtimeEndpointRequest().withMLModelId(modelId))
+    val columns = awsModel.getSchema.getColumnNames.asScala
+    val pair = columns zip inputs
+    pair foreach { case (colName, value) =>
+      prediction.addRecordEntry(colName, value.toString)
+    }
+    prediction.setMLModelId(modelId)
+    prediction.setPredictEndpoint(predictEndPoint.getRealtimeEndpointInfo.getEndpointUrl)
+    val predictResult = client.predict(prediction)
+    awsModel.getMLModelType match {
+      case MLModelType.BINARY => Right(predictResult.getPrediction.getPredictedLabel)
+      case MLModelType.MULTICLASS => Right(predictResult.getPrediction.getPredictedLabel)
+      case MLModelType.REGRESSION => Left(predictResult.getPrediction.getPredictedValue)
+    }
+  }
+
 }
