@@ -29,7 +29,7 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
   override def applyModel(model: IModel, hasLabels: Boolean): DDF = applyModel(model, hasLabels, includeFeatures = true)
 
   override def applyModel(model: IModel, hasLabels: Boolean, includeFeatures: Boolean): DDF = {
-    val awsModel = model.asInstanceOf[AwsModel]
+    val awsModel = model.getRawModel.asInstanceOf[AwsModel]
     val tableName = ddf.getTableName
     val sql = awsHelper.selectSql(tableName)
     val dataSourceId = awsMLHelper.createDataSourceFromRedShift(ddf.getSchema, sql, awsModel.getMLModelType)
@@ -97,17 +97,15 @@ class MLSupporter(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with ISuppor
       throw new DDFException("Confusion Matrix can only be evaluated for Regression model")
     }
     val predictedDDF = ddf.ML.applyModel(iModel)
-    val originalDDF = ddf
     val matrix = Array.ofDim[Long](2, 2)
 
     val predictDDFAsSql = predictedDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT)
       .asInstanceOf[SqlArrayResult].result
-    val result = predictDDFAsSql map (row => row(row.length - 2)) zip (predictDDFAsSql map (row => row(row.length -
-      1)))
+    val result = predictDDFAsSql map (row => row(row.length - 2).asInstanceOf[Double]) zip (predictDDFAsSql map (row
+    => row(row.length - 1).asInstanceOf[Double]))
 
     for (row <- result.indices) {
-      val newVal = result(row)._2.asInstanceOf[Double]
-      val oldVal = (List(result(row)._1) collect { case i: java.lang.Number => i.doubleValue() }).sum
+      val (oldVal,newVal) = result(row)
       if ((oldVal < v || oldVal == v) && (newVal < v || newVal == v))
         matrix(0)(0) = matrix(0)(0) + 1
       else if ((oldVal < v || oldVal == v) && newVal > v)

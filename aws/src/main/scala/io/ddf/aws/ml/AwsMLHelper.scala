@@ -127,11 +127,11 @@ class AwsMLHelper(awsProperties: AwsProperties) {
     def getStatus = {
       entityType match {
         case "MODEL" => val request = new GetMLModelRequest().withMLModelId(entityId)
-          client.getMLModel(request) getStatus
+          client.getMLModel(request).getStatus
         case "EVALUATION" => val request = new GetEvaluationRequest().withEvaluationId(entityId)
-          client.getEvaluation(request) getStatus
+          client.getEvaluation(request).getStatus
         case "BATCH_PREDICTION" => val request = new GetBatchPredictionRequest().withBatchPredictionId(entityId)
-          client.getBatchPrediction(request) getStatus
+          client.getBatchPrediction(request).getStatus
       }
     }
     while (!terminated) {
@@ -163,7 +163,7 @@ class AwsMLHelper(awsProperties: AwsProperties) {
     }
     waitForEvaluation(evalId)
     val answer = client.getEvaluation(metricRequest).getPerformanceMetrics getProperties()
-    answer get parameter toDouble
+    (answer get parameter).toDouble
   }
 
   def predict(inputs: Seq[_], awsModel: AwsModel): Either[Float, String] = {

@@ -133,4 +133,39 @@ trait MLBehaviors extends BaseBehaviors {
     }
   }
 
+  def ddfWithPrediction(implicit l: Loader): Unit = {
+    val airlineDDF: DDF = l.loadAirlineDDF()
+    val mtcarsDDF: DDF = l.loadMtCarsDDF()
+    val binaryMtcarsDDF: DDF = mtcarsDDF.sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM " +
+      "ddf://adatao/mtcars")
+
+    it should "do prediction for regression model" in {
+      val ddf: DDF = airlineDDF
+      val linearRegressionModel: LinearRegression = ddf.ML.train("REGRESSION").getRawModel.asInstanceOf[LinearRegression]
+      val predictedValue = linearRegressionModel.predict(Seq(2008, 4, 3, 4, 1644, 1510, 1845, 1725, "WN", 1333, "N334SW", 121, 135,
+        107, 80, 94, "IND", "MCO", 828, 6, 8, 0, 0, 0, 8, 0, 0, 0))
+      assert(predictedValue.isInstanceOf[Float])
+    }
+
+    it should "do prediction for binary model" in {
+      val ddf: DDF = binaryMtcarsDDF
+      val binaryClassificationModel: BinaryClassification = ddf.ML.train("BINARY").getRawModel.asInstanceOf[BinaryClassification]
+      val predictedLabel = binaryClassificationModel.predict(Seq(21.0, 6, 160.0, 110, 3.90, 2.620, 16.46))
+      assert(predictedLabel == "0" || predictedLabel == "1")
+    }
+
+    it should "do prediction for multiclass model" in {
+      val ddf: DDF = mtcarsDDF
+      val targetColumn = ddf.getColumnNames.asScala.last
+      ddf.setAsFactor(targetColumn)
+      ddf.getSchemaHandler.computeFactorLevelsAndLevelCounts()
+      val levels = ddf.getColumn(targetColumn).getOptionalFactor.getLevels.asScala
+      val multiclassClassificationModel: MultiClassClassification = ddf.ML.train("MULTICLASS").getRawModel
+        .asInstanceOf[MultiClassClassification]
+      val predictedLabel = multiclassClassificationModel.predict(Seq(21.0, 6, 160.0, 110, 3.90, 2.620, 16.46, 0, 1, 4))
+      assert(levels exists (level => level equals predictedLabel))
+    }
+
+  }
+
 }
