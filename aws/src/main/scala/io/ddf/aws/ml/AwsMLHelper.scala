@@ -120,6 +120,10 @@ class AwsMLHelper(awsProperties: AwsProperties) {
     waitForCompletion(evaluationId, "EVALUATION")
   }
 
+  def waitForPredictEndpoint(predictId: String) = {
+    waitForCompletion(predictId, "PREDICT_ENDPOINT")
+  }
+
 
   def waitForCompletion(entityId: String, entityType: String, delay: FiniteDuration = FiniteDuration(60, TimeUnit
     .SECONDS)): Unit = {
@@ -132,14 +136,24 @@ class AwsMLHelper(awsProperties: AwsProperties) {
           client.getEvaluation(request).getStatus
         case "BATCH_PREDICTION" => val request = new GetBatchPredictionRequest().withBatchPredictionId(entityId)
           client.getBatchPrediction(request).getStatus
+        case "PREDICT_ENDPOINT" => val request = new GetMLModelRequest().withMLModelId(entityId)
+          client.getMLModel(request).getEndpointInfo.getEndpointStatus
       }
     }
     while (!terminated) {
       val status = getStatus
       println(s"Entity $entityId of type $entityType is $status at ${new Date()}")
-      status match {
-        case "COMPLETED" | "FAILED" | "INVALID" => terminated = true
-        case _ => terminated = false
+      if (entityType == "PREDICT_ENDPOINT") {
+        status match {
+          case "READY" | "FAILED" => terminated = true
+          case _ => terminated = false
+        }
+      }
+      else {
+        status match {
+          case "COMPLETED" | "FAILED" | "INVALID" => terminated = true
+          case _ => terminated = false
+        }
       }
       try if (!terminated) Thread.sleep(delay.toMillis)
       catch {
@@ -168,15 +182,22 @@ class AwsMLHelper(awsProperties: AwsProperties) {
 
   def predict(inputs: Seq[_], awsModel: AwsModel): Either[Float, String] = {
     val modelId = awsModel.getModelId
-    val prediction = new PredictRequest()
-    val predictEndPoint = client.createRealtimeEndpoint(new CreateRealtimeEndpointRequest().withMLModelId(modelId))
+    val predictEndpointRequest = new CreateRealtimeEndpointRequest()
+      .withMLModelId(modelId)
+    val predictEndpointResult = client.createRealtimeEndpoint(predictEndpointRequest)
+    waitForPredictEndpoint("predict endpoint" + modelId)
+    val map: java.util.Map[String, String] = new java.util.HashMap[String, String]()
+    val predictEndPoint = predictEndpointResult.getRealtimeEndpointInfo.getEndpointUrl
     val columns = awsModel.getSchema.getColumnNames.asScala
     val pair = columns zip inputs
     pair foreach { case (colName, value) =>
-      prediction.addRecordEntry(colName, value.toString)
+      map.put(colName, value.toString)
     }
-    prediction.setMLModelId(modelId)
-    prediction.setPredictEndpoint(predictEndPoint.getRealtimeEndpointInfo.getEndpointUrl)
+    val prediction = new PredictRequest()
+      .withMLModelId(modelId)
+      .withRecord(map)
+      .withPredictEndpoint(predictEndPoint)
+
     val predictResult = client.predict(prediction)
     awsModel.getMLModelType match {
       case MLModelType.BINARY => Right(predictResult.getPrediction.getPredictedLabel)
