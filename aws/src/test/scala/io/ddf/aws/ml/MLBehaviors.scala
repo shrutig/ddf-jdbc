@@ -136,8 +136,6 @@ trait MLBehaviors extends BaseBehaviors {
   def ddfWithPrediction(implicit l: Loader): Unit = {
     val airlineDDF: DDF = l.loadAirlineDDF()
     val mtcarsDDF: DDF = l.loadMtCarsDDF()
-    val binaryMtcarsDDF: DDF = mtcarsDDF.sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM " +
-      "ddf://adatao/mtcars")
 
     it should "do prediction for regression model" in {
       val ddf: DDF = airlineDDF
@@ -148,7 +146,7 @@ trait MLBehaviors extends BaseBehaviors {
     }
 
     it should "do prediction for binary model" in {
-      val ddf: DDF = binaryMtcarsDDF
+      val ddf: DDF = mtcarsDDF.sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM ddf://adatao/mtcars")
       val binaryClassificationModel: BinaryClassification = ddf.ML.train("BINARY").getRawModel.asInstanceOf[BinaryClassification]
       val predictedLabel = binaryClassificationModel.predict(Seq(21.0, 6, 160.0, 110, 3.90, 2.620, 16.46))
       assert(predictedLabel == "0" || predictedLabel == "1")
@@ -165,7 +163,6 @@ trait MLBehaviors extends BaseBehaviors {
       val predictedLabel = multiclassClassificationModel.predict(Seq(21.0, 6, 160.0, 110, 3.90, 2.620, 16.46, 0, 1, 4))
       assert(levels exists (level => level equals predictedLabel))
     }
-
   }
 
 }
