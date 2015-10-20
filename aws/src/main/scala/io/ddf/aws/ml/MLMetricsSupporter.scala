@@ -59,7 +59,7 @@ class MLMetricsSupporter(ddf: DDF) extends io.ddf.ml.AMLMetricsSupporter(ddf) {
   @throws(classOf[DDFException])
   override def rmse(testDDF: DDF, implicitPref: Boolean): Double = {
     val model = ddf.ML.train("REGRESSION")
-    val awsModel = model.asInstanceOf[AwsModel]
+    val awsModel = model.getRawModel.asInstanceOf[AwsModel]
     val sql = awsHelper.selectSql(testDDF.getTableName)
     val dataSourceId = mlHelper.createDataSourceFromRedShift(ddf.getSchema, sql, awsModel.getMLModelType)
     mlHelper.getEvaluationMetrics(dataSourceId, awsModel.getModelId, awsModel.getMLModelType.toString)
