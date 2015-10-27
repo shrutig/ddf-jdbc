@@ -180,7 +180,11 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
 
   override def getOrRestoreDDFUri(ddfURI: String): DDF = null
 
-  override def transfer(fromEngine: UUID, ddfuri: String): DDF = {
+  override def transfer(fromEngine: UUID, ddfuuid: UUID): DDF = {
+    throw new DDFException("Load DDF from file is not supported!")
+  }
+
+  override def transferByTable(fromEngine: UUID, tblName : String): DDF = {
     throw new DDFException("Load DDF from file is not supported!")
   }
 

@@ -50,7 +50,6 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
       create2ddf(command, schema)
     } else {
       if (this.ddfManager.getCanCreateView()) {
-        this.getManager.log(">>> Creating view in database")
         val viewName = TableNameGenerator.genTableName(8)
         //View will allow select commands
         DdlCommand(getConnection(), baseSchema, "CREATE VIEW " + viewName + " AS (" +
@@ -61,7 +60,6 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
         // TODO(TJ): This function implementation is wrong.
         ddf.getManager.newDDF(this.getManager, viewRep, Array(Representations.VIEW),  ddf.getNamespace, viewName, viewSchema)
       } else {
-        this.getManager.log(">>> Creating view in pe/ddf")
         val sqlRet = this.sql("select * from (" + command + ") tmp limit 1");
         val schema = sqlRet.getSchema
         val viewName = TableNameGenerator.genTableName(8)
@@ -73,16 +71,6 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
                                           ddf.getNamespace,
                                           null,
                                           schema)
-        if (newDDF == null) {
-          this.getManager.log(">>> ERROR: NewDDF is null in sql2ddf")
-        } else {
-          this.getManager.log(">>> NewDDF sucessfully in sql2ddf")
-          if (newDDF.getUUID == null) {
-            this.getManager.log(">>> ERROR: uuid is null of ddf")
-          } else {
-            this.getManager.log(">>> NewDDF UUID ok in sql2ddf")
-          }
-        }
         // Indicate that this ddf is a view, this information will be handled
         // in TableNameReplacer
         newDDF.setIsDDFView(true)
@@ -118,7 +106,6 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
   }
 
   override def sql(command: String, maxRows: Integer, dataSource: DataSourceDescriptor): SqlResult = {
-    this.ddfManager.log("run sql in ddf-jdbc, command is : " + command)
     val maxRowsInt: Int = if (maxRows == null) Integer.MAX_VALUE else maxRows
     if (StringUtils.startsWithIgnoreCase(command.trim, "DROP")) {
       DdlCommand(getConnection(), baseSchema, command)
