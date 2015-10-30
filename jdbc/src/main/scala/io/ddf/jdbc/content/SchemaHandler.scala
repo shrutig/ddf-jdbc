@@ -6,6 +6,7 @@ import java.util.{HashMap => JHMap, List => JList, Map => JMap}
 
 import io.ddf.content.Schema
 import io.ddf.content.Schema.ColumnType
+import io.ddf.datasource.SQLDataSourceDescriptor
 import io.ddf.exception.DDFException
 import io.ddf.{DDF, Factor}
 
@@ -44,17 +45,15 @@ class SchemaHandler(ddf: DDF) extends io.ddf.content.SchemaHandler(ddf: DDF) {
     }
     //loop through all factors and compute factor
 
-    //(select * from hung_test) tmp
-    val table_name = this.getDDF.getTableName
 
     columnIndexes.par.foreach(colIndex => {
       val col = this.getColumn(this.getColumnName(colIndex))
 
       val quotedColName = "\"" + col.getName() + "\""
       val command = s"select ${quotedColName}, count(${quotedColName}) from " +
-        s"$table_name group by ${quotedColName}"
+        s"{1} group by ${quotedColName}"
 
-      val sqlResult = this.getManager.sql(command, "")
+      val sqlResult = this.getManager.sql(command, new SQLDataSourceDescriptor(command, null, null, null, this.getDDF.getUUID.toString))
       //JMap[String, Integer]
       var result = sqlResult.getRows()
       val levelCounts: java.util.Map[String, Integer] = new java.util.HashMap[String, Integer]()
