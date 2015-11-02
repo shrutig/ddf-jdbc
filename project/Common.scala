@@ -67,6 +67,8 @@ object Common {
     scalacOptions := Seq("-unchecked", "-optimize", "-deprecation"),
     fork in Test := true,
     parallelExecution in ThisBuild := false,
+    libraryDependencies ++= Seq(
+    "io.ddf" %% "ddf_core" % ddfVersion % "provided"),
     javaOptions in Test ++= Seq("-Xmx2g"),
     concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
     otherResolvers := Seq(Resolver.file("dotM2", file(Path.userHome + "/.m2/repository"))),
@@ -78,4 +80,5 @@ object Common {
     publishLocalBoth <<= Seq(publishLocal in MavenCompile, publishLocal).dependOn
   )
   scalaVersion in ThisBuild := "2.10.X"
+  
 }
