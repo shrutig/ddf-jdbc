@@ -20,7 +20,6 @@ trait ContentBehaviors extends BaseBehaviors {
     val ddf = l.loadAirlineDDF()
 
     it should "load data from file" in {
-      ddf.getNamespace should be("adatao")
       ddf.getColumnNames should have size 29
 
     }
@@ -28,14 +27,12 @@ trait ContentBehaviors extends BaseBehaviors {
     it should "load data from file using loadTable" in {
       val filePath = getClass.getResource("/airline.csv").getPath
       val ddf = l.jdbcDDFManager.loadTable(filePath, ",")
-      ddf.getNamespace should be("adatao")
       ddf.getColumnNames should have size 29
 
     }
 
-    it should "be addressable via URI" in {
-      ddf.getUri should be("ddf://" + ddf.getNamespace + "/" + ddf.getName)
-      l.jdbcDDFManager.getDDFByURI("ddf://" + ddf.getNamespace + "/" + ddf.getName) should be(ddf)
+    it should "be addressable via name" in {
+      l.jdbcDDFManager.getDDFByName(ddf.getName) should be(ddf)
     }
   }
 

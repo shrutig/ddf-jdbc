@@ -158,7 +158,7 @@ class BinningHandler(ddf: DDF) extends io.ddf.analytics.ABinningHandler(ddf) {
           // the full case expression under select
           "case " + caseLowest + cases + caseHighest + " else null end as " + col
         }
-    }.mkString(", "), ddf.getUri)
+    }.mkString(", "), "@this")
     mLog.info("Transform sql = {}", sqlCmd)
 
     sqlCmd
@@ -183,7 +183,7 @@ class BinningHandler(ddf: DDF) extends io.ddf.analytics.ABinningHandler(ddf) {
   }
 
   def getIntervalsFromNumBins(colName: String, bins: Int): Array[Double] = {
-    val cmd = "SELECT min(%s), max(%s) FROM %s".format(colName, colName, ddf.getUri)
+    val cmd = "SELECT min(%s), max(%s) FROM %s".format(colName, colName, "@this")
     val res: Array[Double] = ddf.sql(cmd, "").getRows.get(0).split("\t").map(x ⇒ x.toDouble)
     val (min, max) = (res(0), res(1))
     val eachInterval = (max - min) / bins

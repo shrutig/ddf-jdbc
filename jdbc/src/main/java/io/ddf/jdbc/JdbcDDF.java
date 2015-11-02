@@ -12,9 +12,9 @@ import java.util.List;
 
 public class JdbcDDF extends DDF {
 
-  public JdbcDDF(DDFManager manager, Object data, Class<?>[] typeSpecs, String namespace, String name, Schema schema)
+  public JdbcDDF(DDFManager manager, Object data, Class<?>[] typeSpecs, String name, Schema schema)
       throws DDFException {
-    super(manager, data, typeSpecs, namespace, name, schema);
+    super(manager, data, typeSpecs, name, schema);
   }
 
   @Override public DDF copy() throws DDFException {

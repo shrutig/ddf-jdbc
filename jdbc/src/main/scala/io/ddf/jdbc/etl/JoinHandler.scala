@@ -3,6 +3,7 @@ package io.ddf.jdbc.etl
 import java.util
 
 import io.ddf.DDF
+import io.ddf.datasource.SQLDataSourceDescriptor
 import io.ddf.etl.IHandleJoins
 import io.ddf.etl.Types.JoinType
 import io.ddf.exception.DDFException
@@ -15,8 +16,6 @@ class JoinHandler(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with IHandle
   @throws(classOf[DDFException])
   override def join(anotherDDF: DDF, joinTypeParam: JoinType, byColumns: util.List[String], byLeftColumns: util.List[String], byRightColumns: util.List[String]): DDF = {
     val joinType = if (joinTypeParam == null) JoinType.INNER else joinTypeParam
-    val leftTableName: String = getDDF.getUri
-    val rightTableName: String = anotherDDF.getUri
     val rightColumnNameSet: util.HashSet[String] = new util.HashSet[String]()
     rightColumnNameSet.addAll(anotherDDF.getSchema.getColumns.map(_.getName))
 
@@ -48,16 +47,17 @@ class JoinHandler(ddf: DDF) extends ADDFFunctionalGroupHandler(ddf) with IHandle
 
     val executeCommand =
       if (JoinType.LEFTSEMI equals joinType) {
-        String.format("SELECT lt.* FROM %s lt %s JOIN %s rt ON (%s)", leftTableName, joinType.getStringRepr, rightTableName, columnString)
+        String.format("SELECT lt.* FROM %s lt %s JOIN %s rt ON (%s)", "{1}", joinType.getStringRepr, "{2}", columnString)
       }
       else {
-        String.format("SELECT lt.*,%s FROM %s lt %s JOIN %s rt ON (%s)", rightSelectColumns, leftTableName, joinType.getStringRepr, rightTableName, columnString)
+        String.format("SELECT lt.*,%s FROM %s lt %s JOIN %s rt ON (%s)", rightSelectColumns, "{1}", joinType.getStringRepr, "{2}", columnString)
       }
-    this.getManager.sql2ddf(executeCommand)
+    this.getManager.sql2ddf(executeCommand, new SQLDataSourceDescriptor(null, null, null, null,
+    String.format("%s\t%s", getDDF.getUUID.toString, anotherDDF.getUUID.toString)))
   }
 
   override def merge(anotherDDF: DDF): DDF = {
-    val sql = String.format("SELECT * from %s UNION ALL SELECT * from %s", ddf.getUri, anotherDDF.getTableName)
-    ddf.sql2ddf(sql)
+    val sql = String.format("SELECT * from %s UNION ALL SELECT * from %s", "{1}", "{2}")
+    ddf.getManager.sql2ddf(sql, new SQLDataSourceDescriptor(null, null, null, null, String.format("%s\t%s", ddf.getUUID.toString, anotherDDF.getUUID.toString)))
   }
 }

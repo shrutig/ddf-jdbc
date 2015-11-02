@@ -58,7 +58,7 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
           baseSchema, viewName) else schema
         val viewRep = TableNameRepresentation(viewName, viewSchema)
         // TODO(TJ): This function implementation is wrong.
-        ddf.getManager.newDDF(this.getManager, viewRep, Array(Representations.VIEW),  ddf.getNamespace, viewName, viewSchema)
+        ddf.getManager.newDDF(this.getManager, viewRep, Array(Representations.VIEW), viewName, viewSchema)
       } else {
         val sqlRet = this.sql("select * from (" + command + ") tmp limit 1");
         val schema = sqlRet.getSchema
@@ -68,7 +68,6 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
                                           "this is a view", // the content
                                           // content class
                                           Array(classOf[java.lang.String]),
-                                          ddf.getNamespace,
                                           null,
                                           schema)
         // Indicate that this ddf is a view, this information will be handled
@@ -94,7 +93,7 @@ class SqlHandler(ddf: DDF) extends io.ddf.etl.ASqlHandler(ddf) {
     val tableSchema = if (schema == null) catalog.getTableSchema(getConnection(),
       baseSchema, tableName) else schema
     val emptyRep = TableNameRepresentation(tableName, tableSchema)
-    ddf.getManager.newDDF(this.getManager, emptyRep, Array(Representations.VIEW), ddf.getNamespace, tableName, tableSchema)
+    ddf.getManager.newDDF(this.getManager, emptyRep, Array(Representations.VIEW), tableName, tableSchema)
   }
 
   override def sql(command: String): SqlResult = {
