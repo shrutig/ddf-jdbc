@@ -26,7 +26,7 @@ trait ContentBehaviors extends BaseBehaviors {
 
     it should "load data from file using loadTable" in {
       val filePath = getClass.getResource("/airline.csv").getPath
-      val ddf = l.jdbcDDFManager.loadTable(filePath, ",")
+      val ddf = l.jdbcDDFManager.loadFile(filePath, ",")
       ddf.getColumnNames should have size 29
 
     }

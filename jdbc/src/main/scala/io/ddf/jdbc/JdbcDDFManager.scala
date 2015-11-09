@@ -134,7 +134,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     ddf
   }
 
-  override def loadTable(fileURL: String, fieldSeparator: String): DDF = {
+  override def loadFile(fileURL: String, fieldSeparator: String): DDF = {
     checkSinkAllowed()
     implicit val cat = catalog
     val tableName = getDummyDDF.getSchemaHandler.newTableName()
