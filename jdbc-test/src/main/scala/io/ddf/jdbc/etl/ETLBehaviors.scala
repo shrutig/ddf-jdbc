@@ -199,7 +199,7 @@ trait ETLBehaviors extends BaseBehaviors {
   }
 
   def ddfWithBasicTransformSupport(implicit l: Loader): Unit = {
-    val ddf = l.loadAirlineDDF().sql2ddf("select year, month, deptime, arrtime, distance, arrdelay, depdelay from ddf://adatao/airline")
+    val ddf = l.loadAirlineDDF().sql2ddf("select year, month, deptime, arrtime, distance, arrdelay, depdelay from airline")
 
     it should "transform scale min max" in {
       ddf.getSummary foreach println _
@@ -270,7 +270,7 @@ trait ETLBehaviors extends BaseBehaviors {
 
     it should "run a simple sql command" in {
       val ddf = l.loadAirlineDDF()
-      val ddf1 = ddf.sql2ddf("select Year,Month from ddf://adatao/airline")
+      val ddf1 = ddf.sql2ddf("select Year,Month from airline")
       val rep = ddf1.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult]
       val collection = rep.result
       val list = collection.asJava
@@ -281,7 +281,7 @@ trait ETLBehaviors extends BaseBehaviors {
 
     it should "run a sql command with where" in {
       val ddf = l.loadAirlineDDF()
-      val ddf1 = ddf.sql2ddf("select Year,Month from ddf://adatao/airline where Year > 2008 AND Month > 1")
+      val ddf1 = ddf.sql2ddf("select Year,Month from airline where Year > 2008 AND Month > 1")
       val rep = ddf1.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult]
       val collection = rep.result
       val list = collection.asJava

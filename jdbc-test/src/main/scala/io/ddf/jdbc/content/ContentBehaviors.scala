@@ -113,7 +113,7 @@ trait ContentBehaviors extends BaseBehaviors {
 
 
     it should "test get factors" in {
-      val ddf = manager.sql2ddf("select * from ddf://adatao/mtcars")
+      val ddf = manager.sql2ddf("select * from  mtcars")
 
       val schemaHandler = ddf.getSchemaHandler
 
@@ -169,7 +169,7 @@ trait ContentBehaviors extends BaseBehaviors {
       assert(cols(5).getOptionalFactor.getLevelCounts.get("0") === 9.0)
       assert(cols(4).getOptionalFactor.getLevelCounts.get("3") === 1.0)
 
-      val ddf2 = manager.sql2ddf("select * from ddf://adatao/airlineWithNA")
+      val ddf2 = manager.sql2ddf("select * from  airlineWithNA")
       //    ddf2.getRepresentationHandler.remove(classOf[RDD[_]], classOf[TablePartition])
 
       val schemaHandler2 = ddf2.getSchemaHandler
