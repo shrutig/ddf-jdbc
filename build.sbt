@@ -26,6 +26,18 @@ conflictManager := ConflictManager.strict
 
 commonSettings
 
+lazy val jdbcAssemblySettings = Seq(
+  assemblyMergeStrategy in assembly := {
+    case m if m.toLowerCase.endsWith("manifest.mf") => MergeStrategy.discard
+      case m if m.toLowerCase.endsWith("eclipsef.sf") => MergeStrategy.discard
+      case m if m.toLowerCase.endsWith("eclipsef.rsa") => MergeStrategy.discard
+    case "reference.conf" => MergeStrategy.concat
+    case "application.conf"                            => MergeStrategy.concat
+    case _ => MergeStrategy.first
+  },
+  test in assembly := {} 
+)
+
 lazy val root = project.in(file(".")).aggregate(jdbc, jdbcExamples,jdbcTest,postgres,aws)
 
 val com_adatao_unmanaged = Seq(
@@ -33,11 +45,12 @@ val com_adatao_unmanaged = Seq(
   "com.adatao.unmanaged.net.rforge" % "Rserve" % "1.8.2.compiled"
 )
 
-lazy val jdbc = project.in(file("jdbc")).settings(commonSettings: _*).settings(
+ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
+
+lazy val jdbc = project.in(file("jdbc")).settings(commonSettings: _*).settings(jdbcAssemblySettings:_*).settings(
   name := "ddf-jdbc",
   pomExtra := submodulePom,
   libraryDependencies ++= Seq(
-    "io.ddf" %% "ddf_core" % ddfVersion,
     "com.zaxxer" % "HikariCP-java6" % "2.3.9",
     "org.scalikejdbc" %% "scalikejdbc" % "2.2.7",
     "com.univocity" % "univocity-parsers" % "1.5.5",
@@ -45,12 +58,12 @@ lazy val jdbc = project.in(file("jdbc")).settings(commonSettings: _*).settings(
   )
 )
 
-lazy val jdbcExamples = project.in(file("jdbc-examples")).dependsOn(jdbc).settings(commonSettings: _*).settings(
+lazy val jdbcExamples = project.in(file("jdbc-examples")).dependsOn(jdbc).settings(commonSettings: _*).settings(jdbcAssemblySettings:_*).settings(
   name := "ddf-jdbc-examples",
   pomExtra := submodulePom
 )
 
-lazy val jdbcTest = project.in(file("jdbc-test")).dependsOn(jdbc).settings(commonSettings: _*).settings(
+lazy val jdbcTest = project.in(file("jdbc-test")).dependsOn(jdbc).settings(commonSettings: _*).settings(jdbcAssemblySettings:_*).settings(
   name := "ddf-jdbc-test",
   pomExtra := submodulePom,
   libraryDependencies ++= Seq(
@@ -59,7 +72,7 @@ lazy val jdbcTest = project.in(file("jdbc-test")).dependsOn(jdbc).settings(commo
   )
 )
 
-lazy val postgres = project.in(file("postgres")).dependsOn(jdbc,jdbcTest % "test->test").settings(commonSettings: _*).settings(
+lazy val postgres = project.in(file("postgres")).dependsOn(jdbc,jdbcTest % "test->test").settings(commonSettings: _*).settings(jdbcAssemblySettings:_*).settings(
   name := "ddf-jdbc-postgres",
   pomExtra := submodulePom,
   libraryDependencies ++= Seq(
@@ -67,7 +80,7 @@ lazy val postgres = project.in(file("postgres")).dependsOn(jdbc,jdbcTest % "test
   )
 )
 
-lazy val aws = project.in(file("aws")).dependsOn(jdbc,postgres,jdbcTest % "test->test").settings(commonSettings: _*).settings(
+lazy val aws = project.in(file("aws")).dependsOn(jdbc,postgres,jdbcTest % "test->test").settings(commonSettings: _*).settings(jdbcAssemblySettings:_*).settings(
   name := "ddf-jdbc-aws",
   pomExtra := submodulePom,
   libraryDependencies ++= Seq(

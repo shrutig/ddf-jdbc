@@ -74,7 +74,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
 
     config.setMinimumIdle(if (Config.getValue(getEngine, "jdbcPoolMinIdleConns") == null) 2 else Config.getValue(getEngine, "jdbcPoolMinIdleConns").toInt)
     config.setMaximumPoolSize(if (Config.getValue(getEngine, "maxJDBCPoolSize") == null) 15 else Config.getValue(getEngine, "maxJDBCPoolSize").toInt)
-    config.setPoolName(getUUID.toString)
+    config.setPoolName(UUID.randomUUID().toString)
     config.setRegisterMbeans(true)
     val connectionTestQuery = Config.getValue(getEngine, "jdbcConnectionTestQuery")
     if(connectionTestQuery!=null) config.setConnectionTestQuery(connectionTestQuery)
@@ -134,7 +134,7 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     ddf
   }
 
-  override def loadTable(fileURL: String, fieldSeparator: String): DDF = {
+  override def loadFile(fileURL: String, fieldSeparator: String): DDF = {
     checkSinkAllowed()
     implicit val cat = catalog
     val tableName = getDummyDDF.getSchemaHandler.newTableName()
@@ -178,18 +178,6 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
     }
   }
 
-  override def getOrRestoreDDFUri(ddfURI: String): DDF = null
-
-  override def transfer(fromEngine: UUID, ddfuuid: UUID): DDF = {
-    throw new DDFException("Load DDF from file is not supported!")
-  }
-
-  override def transferByTable(fromEngine: UUID, tblName : String): DDF = {
-    throw new DDFException("Load DDF from file is not supported!")
-  }
-
-  override def getOrRestoreDDF(uuid: UUID): DDF = getDDF(uuid)
-
 
   def showTables(schemaName: String): java.util.List[String] = {
     catalog.showTables(getConnection(), schemaName)
@@ -226,5 +214,13 @@ class JdbcDDFManager(dataSourceDescriptor: DataSourceDescriptor,
 
   def disconnect() = {
     connectionPool.shutdown()
+  }
+
+  def copyFrom(ddf: DDF, tgtname: String): DDF = {
+    throw new DDFException("Unsupported Operations")
+  }
+
+  def copyFrom(manager: DDFManager, ddfname: String, tgtname: String): DDF = {
+    throw new DDFException("Unsupported Operations")
   }
 }

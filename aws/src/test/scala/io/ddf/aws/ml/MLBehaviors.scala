@@ -47,10 +47,10 @@ trait MLBehaviors extends BaseBehaviors {
   }
 
   def ddfWithBinary(implicit l: Loader): Unit = {
-    val mtcarDDF = l.loadMtCarsDDF().sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM ddf://adatao/mtcars")
+    val mtcarDDF = l.loadMtCarsDDF().sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM mtcars")
 
     it should "do binary model computation" in {
-      print(mtcarDDF.getUri)
+      print(mtcarDDF.getName)
       val ddf: DDF = mtcarDDF
       val model: IModel = ddf.ML.train("BINARY")
       val prediction = ddf.ML.applyModel(model)
@@ -117,7 +117,7 @@ trait MLBehaviors extends BaseBehaviors {
 
   def ddfWithMetrics(implicit l: Loader): Unit = {
     val airlineDDF: DDF = l.loadAirlineDDF()
-    val mtcarsDDF: DDF = l.loadMtCarsDDF().sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM ddf://adatao/mtcars")
+    val mtcarsDDF: DDF = l.loadMtCarsDDF().sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM mtcars")
 
     it should "do rmse evaluation" in {
       val ddf: DDF = airlineDDF
@@ -146,7 +146,7 @@ trait MLBehaviors extends BaseBehaviors {
     }
 
     it should "do prediction for binary model" in {
-      val ddf: DDF = mtcarsDDF.sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM ddf://adatao/mtcars")
+      val ddf: DDF = mtcarsDDF.sql2ddf("SELECT mpg ,cyl , disp , hp, drat , wt, qsec, vs FROM mtcars")
       val binaryClassificationModel: BinaryClassification = ddf.ML.train("BINARY").getRawModel.asInstanceOf[BinaryClassification]
       val predictedLabel = binaryClassificationModel.predict(Seq(21.0, 6, 160.0, 110, 3.90, 2.620, 16.46))
       assert(predictedLabel == "0" || predictedLabel == "1")

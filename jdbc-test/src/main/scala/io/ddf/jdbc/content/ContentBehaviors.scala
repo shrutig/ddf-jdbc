@@ -20,22 +20,19 @@ trait ContentBehaviors extends BaseBehaviors {
     val ddf = l.loadAirlineDDF()
 
     it should "load data from file" in {
-      ddf.getNamespace should be("adatao")
       ddf.getColumnNames should have size 29
 
     }
 
     it should "load data from file using loadTable" in {
       val filePath = getClass.getResource("/airline.csv").getPath
-      val ddf = l.jdbcDDFManager.loadTable(filePath, ",")
-      ddf.getNamespace should be("adatao")
+      val ddf = l.jdbcDDFManager.loadFile(filePath, ",")
       ddf.getColumnNames should have size 29
 
     }
 
-    it should "be addressable via URI" in {
-      ddf.getUri should be("ddf://" + ddf.getNamespace + "/" + ddf.getName)
-      l.jdbcDDFManager.getDDFByURI("ddf://" + ddf.getNamespace + "/" + ddf.getName) should be(ddf)
+    it should "be addressable via name" in {
+      l.jdbcDDFManager.getDDFByName(ddf.getName) should be(ddf)
     }
   }
 
@@ -116,7 +113,7 @@ trait ContentBehaviors extends BaseBehaviors {
 
 
     it should "test get factors" in {
-      val ddf = manager.sql2ddf("select * from ddf://adatao/mtcars")
+      val ddf = manager.sql2ddf("select * from  mtcars")
 
       val schemaHandler = ddf.getSchemaHandler
 
@@ -172,7 +169,7 @@ trait ContentBehaviors extends BaseBehaviors {
       assert(cols(5).getOptionalFactor.getLevelCounts.get("0") === 9.0)
       assert(cols(4).getOptionalFactor.getLevelCounts.get("3") === 1.0)
 
-      val ddf2 = manager.sql2ddf("select * from ddf://adatao/airlineWithNA")
+      val ddf2 = manager.sql2ddf("select * from  airlineWithNA")
       //    ddf2.getRepresentationHandler.remove(classOf[RDD[_]], classOf[TablePartition])
 
       val schemaHandler2 = ddf2.getSchemaHandler

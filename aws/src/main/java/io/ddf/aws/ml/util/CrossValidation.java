@@ -62,7 +62,7 @@ public class CrossValidation {
         TableNameRepresentation emptyRep = new TableNameRepresentation(table, tableSchema);
         try {
             return awsddfManager
-                    .newDDF(awsddfManager, emptyRep, Identifiers.representation(), ddf.getNamespace(), table, tableSchema);
+                    .newDDF(awsddfManager, emptyRep, Identifiers.representation(), table, tableSchema);
         } catch (DDFException exception) {
             throw new RuntimeException(exception);
         }

@@ -2,41 +2,23 @@ DDF JDBC
 ========
 This project depends on DDF and uses JDBC drivers to connect to SQL databases and provides a basic DDF implementation.
 ### Getting Started
-This set of projects depends on ddf-core and requires it to be published before building this project. To get ddf-core version 1.4.0, clone DDF repo
+This set of projects depends on ddf-core and requires it to be published before building this project. To get ddf-core, clone DDF repo
 
 ```
 $ git clone git@github.com:ddf-project/DDF.git
 $ cd DDF
 ```
 
-No changes are required when installing DDF using maven.
-
-Before installing DDF using SBT, add a new line to commonSettings in project/RootBuild.scala, (don't miss adding the comma at the end of the previous line in case it is the last setting, in commonSetting)
-```
-  ),
-
-publishArtifact in (Compile, packageDoc) := false
-```
-This is to avoid the error in publishing docs through SBT.
-
-
 DDF can be installed by,
-
 ```
-$ bin/run-once.sh
-//using maven
-$ mvn package install -DskipTests
-//or using sbt
 $ sbt publishLocal
 ```
 
-
 Installing `ddf-jdbc` can be done by
-
 ```
 $ git clone git@github.com:tuplejump/ddf-jdbc.git
 $ cd ddf-jdbc
-$ sbt publish-local
+$ sbt publishLocal
 ```
 
 This will publish four modules viz. ddf-jdbc,ddf-jdbc-test,ddf-jdbc-postgres,ddf-jdbc-aws

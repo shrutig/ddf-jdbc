@@ -31,7 +31,7 @@ trait ETLBehaviors extends BaseBehaviors {
       val rep = joinedDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult]
       val collection = rep.result
       collection.foreach(i => println("[" + i.mkString(",") + "]"))
-      val list = seqAsJavaList(joinedDDF.sql("SELECT DISTINCT YEAR FROM " + joinedDDF.getUri, "Error").getRows)
+      val list = seqAsJavaList(joinedDDF.sql("SELECT DISTINCT YEAR FROM " + joinedDDF.getName, "Error").getRows)
       list.size should be(2) // only 2 values i.e 2008 and 2010 have values in both tables
       rep.schema.getNumColumns should be(31) //29 columns in first plus 2 in second
       val colNames = asBetterList(joinedDDF.getSchema.getColumnNames)
@@ -49,7 +49,7 @@ trait ETLBehaviors extends BaseBehaviors {
       val rep = joinedDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult]
       val collection = rep.result
       collection.foreach(i => println("[" + i.mkString(",") + "]"))
-      val list = seqAsJavaList(joinedDDF.sql("SELECT DISTINCT YEAR FROM " + joinedDDF.getUri, "Error").getRows)
+      val list = seqAsJavaList(joinedDDF.sql("SELECT DISTINCT YEAR FROM " + joinedDDF.getName, "Error").getRows)
       list.size should be(3) // 3 distinct values in airline years 2008,2009,2010
       val first = list.get(0)
       rep.schema.getNumColumns should be(31) //29 columns in first plus 2 in second
@@ -95,7 +95,7 @@ trait ETLBehaviors extends BaseBehaviors {
       val joinedDDF = ddf.join(ddf2, JoinType.FULL, null, Collections.singletonList("Year"), Collections.singletonList("Year_num"))
       val rep = joinedDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult]
       val collection = rep.result
-      val list = seqAsJavaList(joinedDDF.sql("SELECT DISTINCT YEAR FROM " + joinedDDF.getUri, "Error").getRows)
+      val list = seqAsJavaList(joinedDDF.sql("SELECT DISTINCT YEAR FROM " + joinedDDF.getName, "Error").getRows)
       list.size should be(4)
       val first = list.get(0)
       rep.schema.getNumColumns should be(31) //29 columns in first plus 2 in second
@@ -119,7 +119,7 @@ trait ETLBehaviors extends BaseBehaviors {
       val rep = joinedDDF.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult]
       val collection = rep.result
       collection.foreach(i => println("[" + i.mkString(",") + "]"))
-      val list = seqAsJavaList(joinedDDF.sql("SELECT DISTINCT YEAR FROM " + joinedDDF.getUri, "Error").getRows)
+      val list = seqAsJavaList(joinedDDF.sql("SELECT DISTINCT YEAR FROM " + joinedDDF.getName, "Error").getRows)
       list.size should be(3) // 3 distinct values in null ,2008,2010
       val first = list.get(0)
       rep.schema.getNumColumns should be(31) //29 columns in first plus 2 in second
@@ -199,7 +199,7 @@ trait ETLBehaviors extends BaseBehaviors {
   }
 
   def ddfWithBasicTransformSupport(implicit l: Loader): Unit = {
-    val ddf = l.loadAirlineDDF().sql2ddf("select year, month, deptime, arrtime, distance, arrdelay, depdelay from ddf://adatao/airline")
+    val ddf = l.loadAirlineDDF().sql2ddf("select year, month, deptime, arrtime, distance, arrdelay, depdelay from airline")
 
     it should "transform scale min max" in {
       ddf.getSummary foreach println _
@@ -270,7 +270,7 @@ trait ETLBehaviors extends BaseBehaviors {
 
     it should "run a simple sql command" in {
       val ddf = l.loadAirlineDDF()
-      val ddf1 = ddf.sql2ddf("select Year,Month from ddf://adatao/airline")
+      val ddf1 = ddf.sql2ddf("select Year,Month from airline")
       val rep = ddf1.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult]
       val collection = rep.result
       val list = collection.asJava
@@ -281,7 +281,7 @@ trait ETLBehaviors extends BaseBehaviors {
 
     it should "run a sql command with where" in {
       val ddf = l.loadAirlineDDF()
-      val ddf1 = ddf.sql2ddf("select Year,Month from ddf://adatao/airline where Year > 2008 AND Month > 1")
+      val ddf1 = ddf.sql2ddf("select Year,Month from airline where Year > 2008 AND Month > 1")
       val rep = ddf1.getRepresentationHandler.get(Representations.SQL_ARRAY_RESULT).asInstanceOf[SqlArrayResult]
       val collection = rep.result
       val list = collection.asJava
