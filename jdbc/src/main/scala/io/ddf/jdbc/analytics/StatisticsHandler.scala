@@ -104,7 +104,8 @@ class StatisticsHandler(ddf: DDF) extends AStatisticsSupporter(ddf) {
     this.getDDF.getSchema.getColumns.filter(column => column.getColumnClass eq Schema.ColumnClass.FACTOR)
   }
 
-  private def getNumericColumns: util.List[Schema.Column] = {
+  //This function is made accessible in ddf package so that other modules like teradata can access it
+  private[ddf] def getNumericColumns: util.List[Schema.Column] = {
     this.getDDF.getSchema.getColumns.filter(col => col.isNumeric)
   }
 

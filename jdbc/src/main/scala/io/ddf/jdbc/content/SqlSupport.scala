@@ -89,41 +89,51 @@ object SqlArrayResultCommand {
   def apply(connection: Connection, schemaName: String, tableName: String, command: String, maxRows: Int)(implicit catalog: Catalog): SqlArrayResult = {
     val schema = new Schema(tableName, "")
 
-    implicit val session = DB(connection).readOnlySession()
-    catalog.setSchema(connection, schemaName)
-    val list = SQL(command).map { rs =>
-      val actualRS = rs.underlying
-      val md = actualRS.getMetaData
-      val colCount = md.getColumnCount
-      val row: Array[Any] = new Array[Any](colCount)
-      val columns: Array[Column] = new Array[Column](colCount)
-      var colIdx = 0
-      while (colIdx < colCount) {
-        //resultset in jdbc start at 1
-        val rsIdx = colIdx + 1
-        row(colIdx) = actualRS.getObject(rsIdx)
-        val colName = md.getColumnName(rsIdx)
-        val colType = md.getColumnType(rsIdx)
-        columns(colIdx) = new Column(colName, Utils.getDDFType(colType))
-        colIdx = colIdx + 1
-      }
-      schema.setColumns(columns.toList.asJava)
-      row
-    }.list().apply
+    try {
+      implicit val session = DB(connection).readOnlySession()
+      catalog.setSchema(connection, schemaName)
+      val list = SQL(command).map { rs =>
+        val actualRS = rs.underlying
+        val md = actualRS.getMetaData
+        val colCount = md.getColumnCount
+        val row: Array[Any] = new Array[Any](colCount)
+        val columns: Array[Column] = new Array[Column](colCount)
+        var colIdx = 0
+        while (colIdx < colCount) {
+          //resultset in jdbc start at 1
+          val rsIdx = colIdx + 1
+          row(colIdx) = actualRS.getObject(rsIdx)
+          val colName = md.getColumnName(rsIdx)
+          val colType = md.getColumnType(rsIdx)
+          columns(colIdx) = new Column(colName, Utils.getDDFType(colType))
+          colIdx = colIdx + 1
+        }
+        schema.setColumns(columns.toList.asJava)
+        row
+      }.list().apply
 
-    session.close()
+      session.close()
+      val subList = if (maxRows < list.size) list.take(maxRows) else list
+      new SqlArrayResult(schema, subList)
+    }
+    finally {
+      connection.close()
+    }
 
-    val subList = if (maxRows < list.size) list.take(maxRows) else list
-    new SqlArrayResult(schema, subList)
   }
 }
 
 
 object DdlCommand {
   def apply(connection: Connection, schemaName: String, command: String)(implicit catalog: Catalog) = {
-    val db = DB(connection)
-    db localTx { implicit session =>
-      SQL(command).executeUpdate().apply()
+    try {
+      val db = DB(connection)
+      db localTx { implicit session =>
+        SQL(command).executeUpdate().apply()
+      }
+    }
+    finally {
+      connection.close()
     }
   }
 }
@@ -141,15 +151,24 @@ object SchemaToCreate {
   }
 }
 
-object LoadCommand {
+object LoadCommand extends LoadCommand
+/*LoadCommand is made into a trait to overload its' methods if required, e.g. for
+  the teradata database
+ */
+trait LoadCommand {
   private val dateFormat = new SimpleDateFormat()
 
   class SerCsvParserSettings extends CsvParserSettings with Serializable
 
   def apply(connection: Connection, schemaName: String, schema: Schema, l: Load)(implicit catalog: Catalog): String = {
-    val lines: util.List[Array[String]] = getLines(l)
-    insert(connection, schemaName, schema, lines, l.useDefaults)
-    l.tableName
+    try {
+      val lines: util.List[Array[String]] = getLines(l)
+      insert(connection, schemaName, schema, lines, l.useDefaults)
+      l.tableName
+    }
+    finally {
+      connection.close()
+    }
   }
 
   def parse(command: String) = Parsers.parseLoad(command)
@@ -196,13 +215,18 @@ object LoadCommand {
     val columns = schema.getColumns
     val colStr = columns.map(col => col.getName).mkString(",")
     val paramStr = columns.map(col => "?").mkString(",")
-    val db = DB(connection)
-    implicit val session = db autoCommitSession()
-    catalog.setSchema(connection, schemaName)
-    db localTx { implicit session =>
-      val batchParams: Seq[Seq[Any]] = lines.map(line => parseRow(line, columns, useDefaults))
-      val sql = "insert into " + schema.getTableName + " (" + colStr + ") values (" + paramStr + ") "
-      SQL(sql).batch(batchParams: _*).apply()
+    try {
+      val db = DB(connection)
+      implicit val session = db autoCommitSession()
+      catalog.setSchema(connection, schemaName)
+      db localTx { implicit session =>
+        val batchParams: Seq[Seq[Any]] = lines.map(line => parseRow(line, columns, useDefaults))
+        val sql = "insert into " + schema.getTableName + " (" + colStr + ") values (" + paramStr + ") "
+        SQL(sql).batch(batchParams: _*).apply()
+      }
+    }
+    finally {
+      connection.close()
     }
   }
 
@@ -215,8 +239,8 @@ object LoadCommand {
       case Failure(e) => null
     }
   }
-
-  private def parseRow(rowArray: Array[String], columns: Seq[Column], useDefaults: Boolean): Seq[_] = {
+  //This function is made accessible in ddf package so that other modules like teradata can access it
+  private[ddf] def parseRow(rowArray: Array[String], columns: Seq[Column], useDefaults: Boolean): Seq[_] = {
     val idxColumns: Seq[(Column, Int)] = columns.zipWithIndex
     val row = new Array[Any](idxColumns.size)
     idxColumns foreach {
@@ -296,7 +320,8 @@ object Parsers extends RegexParsers with JavaTokenParsers {
         }.getOrElse(true))
     }
 
-  lazy val create: Parser[Create] = CREATE ~ (TABLE | VIEW) ~ (IF ~> NOT ~> EXISTS).? ~ ident ~ columns ^^ {
+
+  lazy val create: Parser[Create] = CREATE ~ (TABLE | VIEW) ~ (IF ~> NOT ~> EXISTS).?  ~ ident ~ columns ^^ {
     case c ~ tv ~ e ~ tableName ~ cols => Create(tableName)
   }
 
@@ -304,9 +329,18 @@ object Parsers extends RegexParsers with JavaTokenParsers {
     Map() ++ _
   }
 
+  // column definition has been changed to accommodate VARCHAR(length) type of column definition
   def column: Parser[(String, Any)] =
-    ident ~ ident ^^ { case columnName ~ dataType => (columnName, dataType) }
-
+    ident ~ ident  ~ ("(" ~> wholeNumber <~ ")").? ~ ("precision" | "PRECISION").? ^^ {
+      case columnName ~ dataType ~ l ~ p => l match {
+        case Some(length) => if(dataType.equalsIgnoreCase("varchar"))
+          (columnName, dataType)
+        else
+          throw new IllegalArgumentException("cannot parse for" + columnName + "because only varchar type can have" +
+            " length specified")
+        case None => (columnName, dataType)
+      }
+    }
 
   protected lazy val quotedStr: Parser[String] =
     ("'" + """([^'\p{Cntrl}\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""" + "'").r ^^ {

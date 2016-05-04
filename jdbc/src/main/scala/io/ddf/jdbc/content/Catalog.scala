@@ -55,18 +55,26 @@ object SimpleCatalog extends Catalog {
 
   @throws(classOf[SQLException])
   override  def listColumnsForTable(connection: Connection, schemaName: String,
-    tableName: String): util.List[Column] = {
-    val columns: util.List[Column] = new util.ArrayList[Column]
-    val metadata: DatabaseMetaData = connection.getMetaData
-    val resultSet: ResultSet = metadata.getColumns(null, schemaName, tableName.toUpperCase, null)
-    while (resultSet.next) {
-      val columnName = resultSet.getString(4)
-      var columnType = resultSet.getInt(5)
+                                    tableName: String): util.List[Column] = {
+    var resultSet: ResultSet = null
+    try {
+      val columns: util.List[Column] = new util.ArrayList[Column]
+      val metadata: DatabaseMetaData = connection.getMetaData
+      resultSet = metadata.getColumns(null, schemaName, tableName.toUpperCase, null)
+      while (resultSet.next) {
+        val columnName = resultSet.getString(4)
+        var columnType = resultSet.getInt(5)
 
-      val column = new Column(columnName, Utils.getDDFType(columnType))
-      columns.add(column)
+        val column = new Column(columnName, Utils.getDDFType(columnType))
+        columns.add(column)
+      }
+      columns
     }
-    columns
+    finally {
+      if(resultSet!= null)
+        resultSet.close()
+      connection.close()
+    }
   }
 
   override def setSchema(connection: Connection, schemaName: String): Unit = {
@@ -78,45 +86,75 @@ object SimpleCatalog extends Catalog {
   }
 
   override def showTables(connection: Connection, schemaName: String): util.List[String] = {
-    val tables: util.List[String] = new util.ArrayList[String]
-    val metadata: DatabaseMetaData = connection.getMetaData
-    val rs: ResultSet = metadata.getTables(null, schemaName, null, null)
-    while (rs.next()) {
-      tables.add(rs.getString("TABLE_NAME"))
+    var rs: ResultSet = null
+    try {
+      val tables: util.List[String] = new util.ArrayList[String]
+      val metadata: DatabaseMetaData = connection.getMetaData
+      rs = metadata.getTables(null, schemaName, null, null)
+      while (rs.next()) {
+        tables.add(rs.getString("TABLE_NAME"))
+      }
+      tables
     }
-    tables
+    finally {
+      if(rs != null)
+        rs.close()
+      connection.close()
+    }
   }
 
   override def showViews(connection: Connection, schemaName: String): util.List[String] = {
-    val tables: util.List[String] = new util.ArrayList[String]
-    val metadata: DatabaseMetaData = connection.getMetaData
-    val rs: ResultSet = metadata.getTables(null, schemaName, null, Array("VIEW"))
-    while (rs.next()) {
-      tables.add(rs.getString("TABLE_NAME"))
+    var rs: ResultSet = null
+    try {
+      val tables: util.List[String] = new util.ArrayList[String]
+      val metadata: DatabaseMetaData = connection.getMetaData
+      rs = metadata.getTables(null, schemaName, null, Array("VIEW"))
+      while (rs.next()) {
+        tables.add(rs.getString("TABLE_NAME"))
+      }
+      tables
     }
-    tables
+    finally {
+      connection.close()
+    }
   }
 
   override def showDatabases(connection: Connection): util.List[String] = {
-    val catalogs = connection.getMetaData.getCatalogs
-    val databases: util.List[String] = new util.ArrayList[String]
-    while (catalogs.next()) {
-      databases.add(catalogs.getString("TABLE_CAT"))
+    try {
+      val catalogs = connection.getMetaData.getCatalogs
+      val databases: util.List[String] = new util.ArrayList[String]
+      while (catalogs.next()) {
+        databases.add(catalogs.getString("TABLE_CAT"))
+      }
+      databases
     }
-    databases
+    finally {
+      connection.close()
+    }
   }
 
   override def setDatabase(connection: Connection, database: String): Unit = {
-    connection.setCatalog(database)
+    try {
+      connection.setCatalog(database)
+    }
+    connection.close()
   }
 
   override def showSchemas(connection: Connection): util.List[String] = {
-    val rs = connection.getMetaData.getSchemas()
-    val schemas: util.List[String] = new util.ArrayList[String]()
-    while (rs.next()) {
-      schemas.add(rs.getString("TABLE_SCHEM"))
+    var rs: ResultSet = null
+    try {
+      rs = connection.getMetaData.getSchemas()
+      val schemas: util.List[String] = new util.ArrayList[String]()
+      while (rs.next()) {
+        schemas.add(rs.getString("TABLE_SCHEM"))
+      }
+      schemas
     }
-    schemas
+    finally {
+      if(rs != null)
+        rs.close()
+      connection.close()
+    }
   }
 
   override def getColumnType(typeStr: String): ColumnType = {
