@@ -35,10 +35,10 @@ lazy val jdbcAssemblySettings = Seq(
     case "application.conf"                            => MergeStrategy.concat
     case _ => MergeStrategy.first
   },
-  test in assembly := {} 
+  test in assembly := {}
 )
 
-lazy val root = project.in(file(".")).aggregate(jdbc, jdbcExamples,jdbcTest,postgres,aws)
+lazy val root = project.in(file(".")).aggregate(jdbc, jdbcExamples,jdbcTest,postgres,aws, teradata)
 
 val com_adatao_unmanaged = Seq(
   "com.adatao.unmanaged.net.rforge" % "REngine" % "2.1.1.compiled",
@@ -86,6 +86,11 @@ lazy val aws = project.in(file("aws")).dependsOn(jdbc,postgres,jdbcTest % "test-
   libraryDependencies ++= Seq(
     "com.amazonaws" % "aws-java-sdk" % "1.10.8"
   )
+)
+
+lazy val teradata = project.in(file("teradata")).dependsOn(jdbc, jdbcTest % "test->test").settings(commonSettings: _*).settings(jdbcAssemblySettings: _*).settings(
+  name := "ddf-jdbc-teradata",
+  pomExtra := submodulePom
 )
 
 resolvers ++= Seq("Adatao Mvnrepos Snapshots" at "https://raw.github.com/adatao/mvnrepos/master/snapshots",

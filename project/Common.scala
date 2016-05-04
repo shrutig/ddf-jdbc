@@ -67,6 +67,7 @@ object Common {
     scalacOptions := Seq("-unchecked", "-optimize", "-deprecation"),
     fork in Test := true,
     parallelExecution in ThisBuild := false,
+    parallelExecution in Test := false,
     libraryDependencies ++= Seq(
     "io.ddf" %% "ddf_core" % ddfVersion % "provided"),
     javaOptions in Test ++= Seq("-Xmx2g"),

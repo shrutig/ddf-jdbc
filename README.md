@@ -54,3 +54,8 @@ Change the ddf-conf/ddf.ini file in the repo and go to the aws section.
 3. Change s3BucketName to the s3 bucket where you want to store any batch prediction or datasources, s3Key to the full dir name where you want to store batch prediction or datasources and change s3Region to the region where your s3 bucket is hosted.
 4. Change awsAccessId and awsAccessKey according to your aws credentials.
 
+Using Teradata Implementation
+=====================================
+Change the ddf-conf/ddf.ini file in the repo and change the teradata section.
+
+Create a lib directory in the teradata folder and unzip the teradata jdbc driver jars downloaded from the Teradata Developer Exchange
